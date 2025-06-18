@@ -252,6 +252,15 @@ export default function VideoPresenter() {
     }
   }
 
+  const clearRecording = () => {
+    if (downloadUrl) {
+      URL.revokeObjectURL(downloadUrl)
+    }
+    setDownloadUrl(null)
+    setRecordedChunks([])
+    setRecordingDuration(0)
+  }
+
 
 
   return (
@@ -281,6 +290,8 @@ export default function VideoPresenter() {
           recordingDuration={recordingDuration}
           downloadUrl={downloadUrl}
           onDownloadRecording={downloadRecording}
+          onClearRecording={clearRecording}
+          recordedMimeType={recordedMimeType}
         />
       </div>
     </div>

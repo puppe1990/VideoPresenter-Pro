@@ -22,6 +22,8 @@ interface ControlsPanelProps {
   recordingDuration: number
   downloadUrl: string | null
   onDownloadRecording: () => void
+  onClearRecording?: () => void
+  recordedMimeType?: string
 }
 
 export default function ControlsPanel({ 
@@ -34,7 +36,9 @@ export default function ControlsPanel({
   onStopRecording, 
   recordingDuration, 
   downloadUrl, 
-  onDownloadRecording 
+  onDownloadRecording,
+  onClearRecording,
+  recordedMimeType
 }: ControlsPanelProps) {
   const backgroundOptions = [
     { value: 'visible', label: 'Visible', icon: Eye },
@@ -145,15 +149,57 @@ export default function ControlsPanel({
             )}
             
             {downloadUrl && !isRecording && (
-              <Button
-                onClick={onDownloadRecording}
-                variant="outline"
-                size="sm"
-                className="w-full"
-              >
-                <Download className="h-3 w-3 mr-2" />
-                Download Video
-              </Button>
+              <div className="space-y-3">
+                {/* Video Preview */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Preview</Label>
+                    <div className="text-xs text-muted-foreground">
+                      {formatDuration(recordingDuration)} • {recordedMimeType?.includes('mp4') ? 'MP4' : 'WebM'}
+                    </div>
+                  </div>
+                  <div className="relative rounded-lg overflow-hidden bg-gray-900 border">
+                    <video
+                      src={downloadUrl}
+                      controls
+                      className="w-full h-32 object-cover"
+                      preload="metadata"
+                      poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggNUwyMSAxMkw4IDE5VjVaIiBmaWxsPSIjNjM2MzYzIi8+Cjwvc3ZnPgo="
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="bg-black/20 rounded-full p-2">
+                        <div className="w-6 h-6 text-white opacity-50">
+                          <Video className="w-full h-full" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    onClick={onDownloadRecording}
+                    variant="default"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    Download
+                  </Button>
+                  {onClearRecording && (
+                    <Button
+                      onClick={onClearRecording}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      <Video className="h-3 w-3 mr-1" />
+                      Record Again
+                    </Button>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </CardContent>
