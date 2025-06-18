@@ -302,7 +302,7 @@ export default function VideoPresenter() {
 
           // For circle shape, create a canvas with circular clipping
           const canvas = document.createElement('canvas')
-          const ctx = canvas.getContext('2d')
+          const ctx = canvas.getContext('2d', { alpha: true })
           if (!ctx) {
             // Fallback to regular PIP if canvas fails
             await video.requestPictureInPicture()
@@ -331,41 +331,31 @@ export default function VideoPresenter() {
 
           // Function to draw circular video frame
           const drawFrame = () => {
-            // Always clear and redraw, even if video isn't fully ready
+            // Clear with transparent background
             ctx.clearRect(0, 0, size, size)
             
-            // Add subtle shadow for depth
+            // First, draw the video in a circle
             ctx.save()
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
-            ctx.shadowBlur = 8
-            ctx.shadowOffsetX = 2
-            ctx.shadowOffsetY = 2
-            
-            // Create circular clipping path with anti-aliasing
             ctx.beginPath()
-            ctx.arc(size / 2, size / 2, size / 2 - 6, 0, 2 * Math.PI)
+            ctx.arc(size / 2, size / 2, size / 2 - 8, 0, 2 * Math.PI)
             ctx.clip()
             
             // Draw video frame (even if not fully loaded)
             try {
               ctx.drawImage(video, 0, 0, size, size)
             } catch (e) {
-              // If video can't be drawn, fill with dark background
-              ctx.fillStyle = '#1f2937'
-              ctx.fillRect(0, 0, size, size)
+              // If video can't be drawn, create a subtle circle instead of black rectangle
+              ctx.fillStyle = settings.color + '20' // Very transparent color
+              ctx.fill()
             }
             ctx.restore()
             
-            // Draw smooth border with gradient
-            const gradient = ctx.createLinearGradient(0, 0, size, size)
-            gradient.addColorStop(0, settings.color)
-            gradient.addColorStop(1, settings.color + '80') // Semi-transparent
-            
-            ctx.strokeStyle = gradient
-            ctx.lineWidth = 6
+            // Draw clean circular border
+            ctx.strokeStyle = settings.color
+            ctx.lineWidth = 8
             ctx.lineCap = 'round'
             ctx.beginPath()
-            ctx.arc(size / 2, size / 2, size / 2 - 3, 0, 2 * Math.PI)
+            ctx.arc(size / 2, size / 2, size / 2 - 4, 0, 2 * Math.PI)
             ctx.stroke()
             
             // Continue animation while PIP is active
