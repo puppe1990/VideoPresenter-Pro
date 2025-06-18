@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { Move } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, RotateCw } from 'lucide-react'
 
 interface VideoCanvasProps {
   videoRef: React.RefObject<HTMLVideoElement>
@@ -17,7 +18,28 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [processingFile, setProcessingFile] = useState(false)
+  const [boardItems, setBoardItems] = useState<BoardItem[]>([])
+  const [selectedItem, setSelectedItem] = useState<string | null>(null)
+  const [isResizing, setIsResizing] = useState(false)
+  const [resizeHandle, setResizeHandle] = useState<string | null>(null)
+
+  interface BoardItem {
+    id: string
+    type: 'image' | 'video' | 'text'
+    src?: string
+    content?: string
+    x: number
+    y: number
+    width: number
+    height: number
+    rotation: number
+    zIndex: number
+  }
 
   // Drag functionality
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -57,6 +79,221 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       onSettingsChange({ ...settings, isDragging: false })
     }
   }, [settings, onSettingsChange])
+
+  // File handling functions
+  const isValidFileType = (file: File) => {
+    const validTypes = [
+      'image/png',
+      'image/jpeg', 
+      'image/jpg',
+      'image/gif',
+      'video/mp4',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/vnd.apple.keynote'
+    ]
+    
+    const validExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.mp4', '.pptx', '.key']
+    const hasValidType = validTypes.includes(file.type)
+    const hasValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext))
+    
+    return hasValidType || hasValidExtension
+  }
+
+  const handleFiles = async (files: FileList | File[]) => {
+    setProcessingFile(true)
+    const fileArray = Array.from(files)
+    const validFiles = fileArray.filter(isValidFileType)
+    
+    if (validFiles.length === 0) {
+      alert('Please upload valid files: .png, .jpg, .gif, .mp4, .pptx, .key')
+      setProcessingFile(false)
+      return
+    }
+
+    try {
+      for (const file of validFiles) {
+        console.log('Processing file:', file.name, file.type)
+        
+        const fileUrl = URL.createObjectURL(file)
+        const newItem: BoardItem = {
+          id: `item-${Date.now()}-${Math.random()}`,
+          type: file.type.startsWith('image/') ? 'image' : 'video',
+          src: fileUrl,
+          x: Math.random() * 300 + 100, // Random position
+          y: Math.random() * 200 + 100,
+          width: file.type.startsWith('image/') ? 200 : 300,
+          height: file.type.startsWith('image/') ? 150 : 200,
+          rotation: 0,
+          zIndex: boardItems.length + 1
+        }
+        
+        setBoardItems(prev => [...prev, newItem])
+      }
+      
+      setUploadedFiles(prev => [...prev, ...validFiles])
+    } catch (error) {
+      console.error('Error processing files:', error)
+      alert('Error processing files. Please try again.')
+    } finally {
+      setProcessingFile(false)
+    }
+  }
+
+  // Drag and drop event handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      handleFiles(files)
+    }
+  }, [])
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      handleFiles(files)
+    }
+  }
+
+  // Board item manipulation functions
+  const handleItemMouseDown = useCallback((e: React.MouseEvent, itemId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setSelectedItem(itemId)
+    
+    const item = boardItems.find(item => item.id === itemId)
+    if (!item) return
+    
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (rect) {
+      const startX = e.clientX - rect.left - item.x
+      const startY = e.clientY - rect.top - item.y
+      
+      const handleMouseMove = (e: MouseEvent) => {
+        const newX = e.clientX - rect.left - startX
+        const newY = e.clientY - rect.top - startY
+        
+        setBoardItems(prev => prev.map(prevItem => 
+          prevItem.id === itemId 
+            ? { ...prevItem, x: Math.max(0, newX), y: Math.max(0, newY) }
+            : prevItem
+        ))
+      }
+      
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+      
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+  }, [boardItems])
+
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent, itemId: string, handle: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsResizing(true)
+    setResizeHandle(handle)
+    setSelectedItem(itemId)
+    
+    const item = boardItems.find(item => item.id === itemId)
+    if (!item) return
+    
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    
+    const startX = e.clientX
+    const startY = e.clientY
+    const startWidth = item.width
+    const startHeight = item.height
+    const startPosX = item.x
+    const startPosY = item.y
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - startX
+      const deltaY = e.clientY - startY
+      
+      let newWidth = startWidth
+      let newHeight = startHeight
+      let newX = startPosX
+      let newY = startPosY
+      
+      switch (handle) {
+        case 'se': // Southeast
+          newWidth = Math.max(50, startWidth + deltaX)
+          newHeight = Math.max(50, startHeight + deltaY)
+          break
+        case 'sw': // Southwest
+          newWidth = Math.max(50, startWidth - deltaX)
+          newHeight = Math.max(50, startHeight + deltaY)
+          newX = startPosX + (startWidth - newWidth)
+          break
+        case 'ne': // Northeast
+          newWidth = Math.max(50, startWidth + deltaX)
+          newHeight = Math.max(50, startHeight - deltaY)
+          newY = startPosY + (startHeight - newHeight)
+          break
+        case 'nw': // Northwest
+          newWidth = Math.max(50, startWidth - deltaX)
+          newHeight = Math.max(50, startHeight - deltaY)
+          newX = startPosX + (startWidth - newWidth)
+          newY = startPosY + (startHeight - newHeight)
+          break
+      }
+      
+      setBoardItems(prev => prev.map(prevItem => 
+        prevItem.id === itemId 
+          ? { ...prevItem, width: newWidth, height: newHeight, x: newX, y: newY }
+          : prevItem
+      ))
+    }
+    
+    const handleMouseUp = () => {
+      setIsResizing(false)
+      setResizeHandle(null)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [boardItems])
+
+  const deleteItem = (itemId: string) => {
+    setBoardItems(prev => prev.filter(item => item.id !== itemId))
+    setSelectedItem(null)
+  }
+
+  const duplicateItem = (itemId: string) => {
+    const item = boardItems.find(item => item.id === itemId)
+    if (item) {
+      const newItem: BoardItem = {
+        ...item,
+        id: `item-${Date.now()}-${Math.random()}`,
+        x: item.x + 20,
+        y: item.y + 20,
+        zIndex: Math.max(...boardItems.map(i => i.zIndex)) + 1
+      }
+      setBoardItems(prev => [...prev, newItem])
+    }
+  }
 
   // Add global mouse event listeners for dragging
   useEffect(() => {
@@ -319,16 +556,181 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         </div>
       </div>
 
+      {/* Board Items */}
+      {boardItems.map((item) => (
+        <div
+          key={item.id}
+          className={`absolute cursor-move select-none ${
+            selectedItem === item.id ? 'ring-2 ring-primary' : ''
+          }`}
+          style={{
+            left: `${item.x}px`,
+            top: `${item.y}px`,
+            width: `${item.width}px`,
+            height: `${item.height}px`,
+            zIndex: item.zIndex,
+            transform: `rotate(${item.rotation}deg)`,
+          }}
+          onMouseDown={(e) => handleItemMouseDown(e, item.id)}
+          onClick={() => setSelectedItem(item.id)}
+        >
+          {/* Item Content */}
+          {item.type === 'image' ? (
+            <img
+              src={item.src}
+              alt="Board item"
+              className="w-full h-full object-cover rounded-lg shadow-lg"
+              draggable={false}
+            />
+          ) : item.type === 'video' ? (
+            <video
+              src={item.src}
+              className="w-full h-full object-cover rounded-lg shadow-lg"
+              controls
+              muted
+            />
+          ) : (
+            <div className="w-full h-full bg-white rounded-lg shadow-lg p-4 text-black">
+              {item.content || 'Text content'}
+            </div>
+          )}
+
+          {/* Selection Controls */}
+          {selectedItem === item.id && (
+            <>
+              {/* Resize Handles */}
+              <div
+                className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-nw-resize"
+                onMouseDown={(e) => handleResizeMouseDown(e, item.id, 'nw')}
+              />
+              <div
+                className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-ne-resize"
+                onMouseDown={(e) => handleResizeMouseDown(e, item.id, 'ne')}
+              />
+              <div
+                className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-sw-resize"
+                onMouseDown={(e) => handleResizeMouseDown(e, item.id, 'sw')}
+              />
+              <div
+                className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-se-resize"
+                onMouseDown={(e) => handleResizeMouseDown(e, item.id, 'se')}
+              />
+
+              {/* Action Buttons */}
+              <div className="absolute -top-10 left-0 flex gap-1">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-6 w-6 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    duplicateItem(item.id)
+                  }}
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-6 w-6 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    deleteItem(item.id)
+                  }}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      ))}
+
+      {/* Click outside to deselect */}
+      <div
+        className="absolute inset-0 -z-10"
+        onClick={() => setSelectedItem(null)}
+      />
+
       {/* File drop area */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-        <Card className="bg-background/80 backdrop-blur-sm border-dashed">
+        <Card 
+          className={`bg-background/80 backdrop-blur-sm border-dashed transition-all duration-200 ${
+            isDragOver 
+              ? 'border-primary bg-primary/10 scale-105' 
+              : 'border-border hover:border-primary/50'
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <div className="px-6 py-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              Drag and drop files here
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              (.png, .jpg, .gif, .mp4, .pptx, .key)
-            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".png,.jpg,.jpeg,.gif,.mp4,.pptx,.key"
+              onChange={handleFileInputChange}
+              className="hidden"
+            />
+            
+            {processingFile ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                <span className="text-sm text-muted-foreground">Processing files...</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    {isDragOver ? 'Drop files here' : 'Drag and drop files here'}
+                  </p>
+                </div>
+                
+                <div className="flex items-center justify-center gap-1 mb-3">
+                  <FileImage className="h-3 w-3 text-muted-foreground" />
+                  <FileVideo className="h-3 w-3 text-muted-foreground" />
+                  <FileText className="h-3 w-3 text-muted-foreground" />
+                </div>
+                
+                <p className="text-xs text-muted-foreground mb-3">
+                  (.png, .jpg, .gif, .mp4, .pptx, .key)
+                </p>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs"
+                >
+                  Choose Files
+                </Button>
+              </>
+            )}
+            
+            {uploadedFiles.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-border/50">
+                <p className="text-xs text-muted-foreground mb-1">
+                  {uploadedFiles.length} file(s) uploaded
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {uploadedFiles.slice(-3).map((file, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {file.name.length > 15 
+                        ? `${file.name.substring(0, 15)}...` 
+                        : file.name
+                      }
+                    </Badge>
+                  ))}
+                  {uploadedFiles.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{uploadedFiles.length - 3} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </Card>
       </div>
