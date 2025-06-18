@@ -5,10 +5,10 @@ import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, RotateCw } from 'lucide-react'
+import { Move, Upload, FileImage, FileVideo, FileText, X, Copy } from 'lucide-react'
 
 interface VideoCanvasProps {
-  videoRef: React.RefObject<HTMLVideoElement>
+  videoRef: React.RefObject<HTMLVideoElement | null>
   settings: PresenterSettings
   onSettingsChange: (settings: PresenterSettings) => void
   isRecording: boolean
@@ -25,10 +25,14 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   const [processingFile, setProcessingFile] = useState(false)
   const [boardItems, setBoardItems] = useState<BoardItem[]>([])
   const [selectedItem, setSelectedItem] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isResizing, setIsResizing] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [resizeHandle, setResizeHandle] = useState<string | null>(null)
   const [isVideoSelected, setIsVideoSelected] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isVideoResizing, setIsVideoResizing] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [videoResizeHandle, setVideoResizeHandle] = useState<string | null>(null)
   const [customVideoSize, setCustomVideoSize] = useState<{ width: number; height: number } | null>(null)
 
@@ -520,20 +524,6 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }
 
   const getBackgroundStyle = () => {
-    // Professional gradient backgrounds
-    const backgrounds = [
-      // Modern dark gradient
-      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      // Soft blue gradient  
-      'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)',
-      // Professional dark
-      'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)',
-      // Elegant purple
-      'linear-gradient(135deg, #9f7aea 0%, #553c9a 100%)',
-      // Clean minimal
-      'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)'
-    ]
-    
     // Use a subtle, professional gradient
     return {
       background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',

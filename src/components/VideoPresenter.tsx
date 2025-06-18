@@ -4,8 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import VideoCanvas from './VideoCanvas'
 import ControlsPanel from './ControlsPanel'
 import TopBar from './TopBar'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+
 
 export interface PresenterSettings {
   backgroundType: 'visible' | 'blurred' | 'hidden'
@@ -22,6 +21,7 @@ export type RecordingSource = 'camera' | 'screen' | 'both'
 
 export default function VideoPresenter() {
   const [isRecording, setIsRecording] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([])
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [recordingDuration, setRecordingDuration] = useState(0)
@@ -252,11 +252,7 @@ export default function VideoPresenter() {
     }
   }
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
+
 
   return (
     <div className="h-screen flex flex-col bg-gray-900">

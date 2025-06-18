@@ -57,11 +57,7 @@ export default function ControlsPanel({
     { value: '#6b7280', name: 'Gray' },
   ]
 
-  const virtualBackgrounds = [
-    { id: 'nature', preview: '/bg-nature.jpg', name: 'Nature' },
-    { id: 'office', preview: '/bg-office.jpg', name: 'Office' },
-    { id: 'abstract', preview: '/bg-abstract.jpg', name: 'Abstract' },
-  ]
+
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
