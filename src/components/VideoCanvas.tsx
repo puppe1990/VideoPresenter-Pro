@@ -27,6 +27,10 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   const [selectedItem, setSelectedItem] = useState<string | null>(null)
   const [isResizing, setIsResizing] = useState(false)
   const [resizeHandle, setResizeHandle] = useState<string | null>(null)
+  const [isVideoSelected, setIsVideoSelected] = useState(false)
+  const [isVideoResizing, setIsVideoResizing] = useState(false)
+  const [videoResizeHandle, setVideoResizeHandle] = useState<string | null>(null)
+  const [customVideoSize, setCustomVideoSize] = useState<{ width: number; height: number } | null>(null)
 
   interface BoardItem {
     id: string
@@ -144,13 +148,26 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDragOver(true)
+    
+    // Only show drag over state if files are being dragged
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true)
+    }
   }, [])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDragOver(false)
+    
+    // Only hide drag over state if we're leaving the main container
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (rect) {
+      const isOutside = e.clientX < rect.left || e.clientX > rect.right || 
+                       e.clientY < rect.top || e.clientY > rect.bottom
+      if (isOutside) {
+        setIsDragOver(false)
+      }
+    }
   }, [])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -162,7 +179,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     if (files.length > 0) {
       handleFiles(files)
     }
-  }, [])
+  }, [handleFiles])
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -294,6 +311,80 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       setBoardItems(prev => [...prev, newItem])
     }
   }
+
+  // Video resize handler
+  const handleVideoResizeMouseDown = useCallback((e: React.MouseEvent, handle: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsVideoResizing(true)
+    setVideoResizeHandle(handle)
+    setIsVideoSelected(true)
+    
+    const videoContainer = videoContainerRef.current
+    if (!videoContainer) return
+    
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    
+    const startX = e.clientX
+    const startY = e.clientY
+    const startWidth = videoContainer.offsetWidth
+    const startHeight = videoContainer.offsetHeight
+    const startPosX = settings.position.x
+    const startPosY = settings.position.y
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - startX
+      const deltaY = e.clientY - startY
+      
+      let newWidth = startWidth
+      let newHeight = startHeight
+      let newX = startPosX
+      let newY = startPosY
+      
+      const minSize = 150
+      
+      switch (handle) {
+        case 'se': // Southeast
+          newWidth = Math.max(minSize, startWidth + deltaX)
+          newHeight = Math.max(minSize, startHeight + deltaY)
+          break
+        case 'sw': // Southwest
+          newWidth = Math.max(minSize, startWidth - deltaX)
+          newHeight = Math.max(minSize, startHeight + deltaY)
+          newX = startPosX + (startWidth - newWidth)
+          break
+        case 'ne': // Northeast
+          newWidth = Math.max(minSize, startWidth + deltaX)
+          newHeight = Math.max(minSize, startHeight - deltaY)
+          newY = startPosY + (startHeight - newHeight)
+          break
+        case 'nw': // Northwest
+          newWidth = Math.max(minSize, startWidth - deltaX)
+          newHeight = Math.max(minSize, startHeight - deltaY)
+          newX = startPosX + (startWidth - newWidth)
+          newY = startPosY + (startHeight - newHeight)
+          break
+      }
+      
+             // Update settings with new position and store custom size locally
+       onSettingsChange({
+         ...settings,
+         position: { x: newX, y: newY }
+       })
+       setCustomVideoSize({ width: newWidth, height: newHeight })
+    }
+    
+    const handleMouseUp = () => {
+      setIsVideoResizing(false)
+      setVideoResizeHandle(null)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [settings, onSettingsChange])
 
   // Add global mouse event listeners for dragging
   useEffect(() => {
@@ -455,6 +546,9 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       ref={containerRef}
       className="w-full h-full relative p-8 overflow-hidden"
       style={getBackgroundStyle()}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       {/* Subtle overlay pattern for texture */}
       <div 
@@ -464,6 +558,27 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
           backgroundSize: '60px 60px'
         }}
       />
+
+      {/* Full board drag overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 bg-primary/10 border-4 border-dashed border-primary/50 z-40 flex items-center justify-center backdrop-blur-sm">
+          <div className="bg-background/90 rounded-lg p-8 text-center shadow-lg">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Upload className="h-8 w-8 text-primary animate-bounce" />
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Drop Files Here</h3>
+                <p className="text-sm text-muted-foreground">Add images, videos, or presentations to your board</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <FileImage className="h-4 w-4" />
+              <FileVideo className="h-4 w-4" />
+              <FileText className="h-4 w-4" />
+              <span className="text-xs">(.png, .jpg, .gif, .mp4, .pptx, .key)</span>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Virtual background overlay */}
       {settings.virtualBackground && (
         <div 
@@ -481,7 +596,9 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       {/* Draggable Video container */}
       <div 
         ref={videoContainerRef}
-        className={`absolute cursor-move ${settings.isDragging ? 'z-50' : 'z-10'}`}
+        className={`absolute cursor-move ${settings.isDragging ? 'z-50' : 'z-10'} ${
+          isVideoSelected ? 'ring-2 ring-primary' : ''
+        }`}
         style={{ 
           left: settings.position.x === 0 && settings.position.y === 0 
             ? '50%' 
@@ -491,9 +608,18 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
             : `${settings.position.y}px`,
           transform: settings.position.x === 0 && settings.position.y === 0 
             ? 'translate(-50%, -50%)' 
-            : 'none'
+            : 'none',
+          ...(customVideoSize && {
+            width: `${customVideoSize.width}px`,
+            height: `${customVideoSize.height}px`
+          })
         }}
         onMouseDown={handleMouseDown}
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsVideoSelected(true)
+          setSelectedItem(null) // Deselect board items
+        }}
       >
         <div className={`relative overflow-hidden ${settings.isDragging ? 'scale-105' : ''} transition-all duration-200`}>
           <div className="relative">
@@ -522,7 +648,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               autoPlay
               muted
               playsInline
-              className={`${getSizeClass()} ${getShapeClass()} transition-all duration-300 ease-in-out ${
+              className={`${customVideoSize ? '' : getSizeClass()} ${getShapeClass()} transition-all duration-300 ease-in-out ${
                 settings.isDragging ? 'pointer-events-none' : ''
               } bg-gray-800 relative z-10`}
               style={{
@@ -530,7 +656,12 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
                 filter: settings.backgroundType === 'blurred' ? 'blur(10px)' : 'none',
                 display: settings.backgroundType === 'hidden' ? 'none' : 'block',
                 minHeight: '200px',
-                minWidth: '300px'
+                minWidth: '300px',
+                ...(customVideoSize && {
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                })
               }}
             />
             
@@ -543,6 +674,28 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               }}
             />
             
+            {/* Video Resize Handles */}
+            {isVideoSelected && (
+              <>
+                <div
+                  className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-nw-resize z-20"
+                  onMouseDown={(e) => handleVideoResizeMouseDown(e, 'nw')}
+                />
+                <div
+                  className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-ne-resize z-20"
+                  onMouseDown={(e) => handleVideoResizeMouseDown(e, 'ne')}
+                />
+                <div
+                  className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-sw-resize z-20"
+                  onMouseDown={(e) => handleVideoResizeMouseDown(e, 'sw')}
+                />
+                <div
+                  className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-se-resize z-20"
+                  onMouseDown={(e) => handleVideoResizeMouseDown(e, 'se')}
+                />
+              </>
+            )}
+
             {/* Recording indicator */}
             {isRecording && (
               <div className="absolute top-4 left-4">
@@ -572,7 +725,10 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
             transform: `rotate(${item.rotation}deg)`,
           }}
           onMouseDown={(e) => handleItemMouseDown(e, item.id)}
-          onClick={() => setSelectedItem(item.id)}
+          onClick={() => {
+            setSelectedItem(item.id)
+            setIsVideoSelected(false) // Deselect video when selecting board item
+          }}
         >
           {/* Item Content */}
           {item.type === 'image' ? (
@@ -649,20 +805,16 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       {/* Click outside to deselect */}
       <div
         className="absolute inset-0 -z-10"
-        onClick={() => setSelectedItem(null)}
+        onClick={() => {
+          setSelectedItem(null)
+          setIsVideoSelected(false)
+        }}
       />
 
       {/* File drop area */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
         <Card 
-          className={`bg-background/80 backdrop-blur-sm border-dashed transition-all duration-200 ${
-            isDragOver 
-              ? 'border-primary bg-primary/10 scale-105' 
-              : 'border-border hover:border-primary/50'
-          }`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          className="bg-background/80 backdrop-blur-sm border-dashed transition-all duration-200 border-border hover:border-primary/50"
         >
           <div className="px-6 py-4 text-center">
             <input
@@ -684,7 +836,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Upload className="h-4 w-4 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    {isDragOver ? 'Drop files here' : 'Drag and drop files here'}
+                    Drag files anywhere on the board
                   </p>
                 </div>
                 
