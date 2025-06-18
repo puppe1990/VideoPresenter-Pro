@@ -292,14 +292,116 @@ export default function VideoPresenter() {
         if (document.pictureInPictureElement) {
           await document.exitPictureInPicture()
         } else {
-          // Simple approach: use the original video for PIP
-          // Note: PIP window won't show custom shapes due to browser limitations
-          // but it will maintain the video content
-          await videoRef.current.requestPictureInPicture()
+          const video = videoRef.current
+          
+          // If it's not a circle, use simple PIP
+          if (settings.shape !== 'circle') {
+            await video.requestPictureInPicture()
+            return
+          }
+
+          // For circle shape, create a canvas with circular clipping
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            // Fallback to regular PIP if canvas fails
+            await video.requestPictureInPicture()
+            return
+          }
+
+          // Set square canvas size for circle with high DPI support
+          const size = 400 // Increased size for better quality
+          const dpr = window.devicePixelRatio || 1
+          canvas.width = size * dpr
+          canvas.height = size * dpr
+          canvas.style.width = size + 'px'
+          canvas.style.height = size + 'px'
+          
+          // Scale context for high DPI
+          ctx.scale(dpr, dpr)
+          
+          // Enable anti-aliasing
+          ctx.imageSmoothingEnabled = true
+          ctx.imageSmoothingQuality = 'high'
+
+          // Create a video element for the canvas stream
+          const pipVideo = document.createElement('video')
+          pipVideo.muted = true
+          pipVideo.playsInline = true
+
+          // Function to draw circular video frame
+          const drawFrame = () => {
+            // Always clear and redraw, even if video isn't fully ready
+            ctx.clearRect(0, 0, size, size)
+            
+            // Add subtle shadow for depth
+            ctx.save()
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
+            ctx.shadowBlur = 8
+            ctx.shadowOffsetX = 2
+            ctx.shadowOffsetY = 2
+            
+            // Create circular clipping path with anti-aliasing
+            ctx.beginPath()
+            ctx.arc(size / 2, size / 2, size / 2 - 6, 0, 2 * Math.PI)
+            ctx.clip()
+            
+            // Draw video frame (even if not fully loaded)
+            try {
+              ctx.drawImage(video, 0, 0, size, size)
+            } catch (e) {
+              // If video can't be drawn, fill with dark background
+              ctx.fillStyle = '#1f2937'
+              ctx.fillRect(0, 0, size, size)
+            }
+            ctx.restore()
+            
+            // Draw smooth border with gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size)
+            gradient.addColorStop(0, settings.color)
+            gradient.addColorStop(1, settings.color + '80') // Semi-transparent
+            
+            ctx.strokeStyle = gradient
+            ctx.lineWidth = 6
+            ctx.lineCap = 'round'
+            ctx.beginPath()
+            ctx.arc(size / 2, size / 2, size / 2 - 3, 0, 2 * Math.PI)
+            ctx.stroke()
+            
+            // Continue animation while PIP is active
+            if (document.pictureInPictureElement === pipVideo) {
+              requestAnimationFrame(drawFrame)
+            }
+          }
+
+          // Get stream from canvas and set up PIP video
+          const stream = canvas.captureStream(30)
+          pipVideo.srcObject = stream
+          
+          // Start the animation loop immediately
+          const startAnimation = () => {
+            drawFrame()
+          }
+          
+          // Start drawing and PIP
+          startAnimation()
+          await pipVideo.play()
+          await pipVideo.requestPictureInPicture()
+          
+          // Ensure animation continues after PIP starts
+          setTimeout(startAnimation, 100)
         }
       }
     } catch (error) {
       console.error('Error toggling Picture-in-Picture:', error)
+      // Fallback to simple PIP if shaped PIP fails
+      if (videoRef.current) {
+        try {
+          await videoRef.current.requestPictureInPicture()
+        } catch (fallbackError) {
+          console.error('Fallback PIP also failed:', fallbackError)
+        }
+      }
     }
   }
 
