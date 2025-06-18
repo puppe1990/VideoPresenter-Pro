@@ -191,21 +191,42 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     }
   }
 
-  const backgroundPattern = {
-    backgroundImage: `
-      radial-gradient(circle at 25px 25px, rgba(255,255,255,.1) 2%, transparent 50%),
-      radial-gradient(circle at 75px 75px, rgba(255,255,255,.1) 2%, transparent 50%)
-    `,
-    backgroundSize: '100px 100px',
-    backgroundColor: 'hsl(var(--muted))'
+  const getBackgroundStyle = () => {
+    // Professional gradient backgrounds
+    const backgrounds = [
+      // Modern dark gradient
+      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      // Soft blue gradient  
+      'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)',
+      // Professional dark
+      'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)',
+      // Elegant purple
+      'linear-gradient(135deg, #9f7aea 0%, #553c9a 100%)',
+      // Clean minimal
+      'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)'
+    ]
+    
+    // Use a subtle, professional gradient
+    return {
+      background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+      position: 'relative' as const
+    }
   }
 
   return (
     <div 
       ref={containerRef}
       className="w-full h-full relative p-8 overflow-hidden"
-      style={backgroundPattern}
+      style={getBackgroundStyle()}
     >
+      {/* Subtle overlay pattern for texture */}
+      <div 
+        className="absolute inset-0 opacity-5"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundSize: '60px 60px'
+        }}
+      />
       {/* Virtual background overlay */}
       {settings.virtualBackground && (
         <div 
