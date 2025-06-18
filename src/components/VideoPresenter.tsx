@@ -127,9 +127,25 @@ export default function VideoPresenter() {
   }
 
   const combineStreams = (cameraStream: MediaStream, screenStream: MediaStream) => {
-    // For now, prioritize screen stream when recording both
-    // In a more advanced implementation, you could combine them into a picture-in-picture layout
-    return screenStream
+    // Create a new MediaStream that combines both streams
+    // For recording purposes, we'll use the screen stream as primary
+    // but keep the camera stream visible in the UI
+    const combinedStream = new MediaStream()
+    
+    // Add screen video track (primary for recording)
+    screenStream.getVideoTracks().forEach(track => {
+      combinedStream.addTrack(track)
+    })
+    
+    // Add both audio tracks if available
+    cameraStream.getAudioTracks().forEach(track => {
+      combinedStream.addTrack(track)
+    })
+    screenStream.getAudioTracks().forEach(track => {
+      combinedStream.addTrack(track)
+    })
+    
+    return combinedStream
   }
 
   const handleStartRecording = async () => {
@@ -162,6 +178,8 @@ export default function VideoPresenter() {
           }
           const screenStreamForBoth = await getScreenStream()
           recordingStream = combineStreams(streamRef.current, screenStreamForBoth)
+          // Keep camera stream visible in UI - don't change videoRef.current.srcObject
+          // The recording will use the combined stream, but UI shows camera
           break
       }
 
@@ -261,6 +279,30 @@ export default function VideoPresenter() {
     setRecordingDuration(0)
   }
 
+  const handlePictureInPicture = async () => {
+    try {
+      if (videoRef.current) {
+        // Check if Picture-in-Picture is supported
+        if (!document.pictureInPictureEnabled) {
+          console.warn('Picture-in-Picture is not supported in this browser')
+          return
+        }
+
+        // Check if already in PIP mode
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture()
+        } else {
+          // Simple approach: use the original video for PIP
+          // Note: PIP window won't show custom shapes due to browser limitations
+          // but it will maintain the video content
+          await videoRef.current.requestPictureInPicture()
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling Picture-in-Picture:', error)
+    }
+  }
+
 
 
   return (
@@ -292,6 +334,7 @@ export default function VideoPresenter() {
           onDownloadRecording={downloadRecording}
           onClearRecording={clearRecording}
           recordedMimeType={recordedMimeType}
+          onPictureInPicture={handlePictureInPicture}
         />
       </div>
     </div>

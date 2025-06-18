@@ -24,6 +24,7 @@ interface ControlsPanelProps {
   onDownloadRecording: () => void
   onClearRecording?: () => void
   recordedMimeType?: string
+  onPictureInPicture: () => void
 }
 
 export default function ControlsPanel({ 
@@ -38,7 +39,8 @@ export default function ControlsPanel({
   downloadUrl, 
   onDownloadRecording,
   onClearRecording,
-  recordedMimeType
+  recordedMimeType,
+  onPictureInPicture
 }: ControlsPanelProps) {
   const backgroundOptions = [
     { value: 'visible', label: 'Visible', icon: Eye },
@@ -201,6 +203,25 @@ export default function ControlsPanel({
                 </div>
               </div>
             )}
+          </div>
+          
+          {/* Picture-in-Picture */}
+          <Separator />
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Stay Visible</Label>
+            <Button
+              onClick={onPictureInPicture}
+              variant="outline"
+              size="sm"
+              className="w-full text-xs"
+              title="Picture-in-Picture (Stay visible when switching tabs)"
+            >
+              <svg className="h-3 w-3 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <rect x="8" y="8" width="8" height="6" rx="1" ry="1"/>
+              </svg>
+              Picture-in-Picture
+            </Button>
           </div>
         </CardContent>
       </Card>

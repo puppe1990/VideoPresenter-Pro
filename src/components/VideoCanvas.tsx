@@ -316,6 +316,8 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     }
   }
 
+
+
   // Video resize handler
   const handleVideoResizeMouseDown = useCallback((e: React.MouseEvent, handle: string) => {
     e.preventDefault()
