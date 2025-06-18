@@ -347,36 +347,73 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       let newY = startPosY
       
       const minSize = 150
+      const isCircle = settings.shape === 'circle'
       
-      switch (handle) {
-        case 'se': // Southeast
-          newWidth = Math.max(minSize, startWidth + deltaX)
-          newHeight = Math.max(minSize, startHeight + deltaY)
-          break
-        case 'sw': // Southwest
-          newWidth = Math.max(minSize, startWidth - deltaX)
-          newHeight = Math.max(minSize, startHeight + deltaY)
-          newX = startPosX + (startWidth - newWidth)
-          break
-        case 'ne': // Northeast
-          newWidth = Math.max(minSize, startWidth + deltaX)
-          newHeight = Math.max(minSize, startHeight - deltaY)
-          newY = startPosY + (startHeight - newHeight)
-          break
-        case 'nw': // Northwest
-          newWidth = Math.max(minSize, startWidth - deltaX)
-          newHeight = Math.max(minSize, startHeight - deltaY)
-          newX = startPosX + (startWidth - newWidth)
-          newY = startPosY + (startHeight - newHeight)
-          break
+      if (isCircle) {
+        // For circles, maintain 1:1 aspect ratio
+        // Calculate the average delta to make resize feel more natural
+        const avgDelta = (Math.abs(deltaX) + Math.abs(deltaY)) / 2
+        let sizeDelta = 0
+        
+        switch (handle) {
+          case 'se': // Southeast - both deltas should be positive for growth
+            sizeDelta = deltaX > 0 && deltaY > 0 ? avgDelta : -avgDelta
+            break
+          case 'sw': // Southwest - deltaX negative, deltaY positive for growth
+            sizeDelta = deltaX < 0 && deltaY > 0 ? avgDelta : -avgDelta
+            break
+          case 'ne': // Northeast - deltaX positive, deltaY negative for growth
+            sizeDelta = deltaX > 0 && deltaY < 0 ? avgDelta : -avgDelta
+            break
+          case 'nw': // Northwest - both deltas should be negative for growth
+            sizeDelta = deltaX < 0 && deltaY < 0 ? avgDelta : -avgDelta
+            break
+        }
+        
+        // Calculate new size, ensuring it doesn't go below minimum
+        const newSize = Math.max(minSize, startWidth + sizeDelta)
+        newWidth = newSize
+        newHeight = newSize // Keep it perfectly square for circle
+        
+        // Calculate center point of original circle
+        const centerX = startPosX + startWidth / 2
+        const centerY = startPosY + startHeight / 2
+        
+        // Position new circle centered on the same point
+        newX = centerX - newSize / 2
+        newY = centerY - newSize / 2
+      } else {
+        // For rectangles, allow free resizing
+        switch (handle) {
+          case 'se': // Southeast
+            newWidth = Math.max(minSize, startWidth + deltaX)
+            newHeight = Math.max(minSize, startHeight + deltaY)
+            break
+          case 'sw': // Southwest
+            newWidth = Math.max(minSize, startWidth - deltaX)
+            newHeight = Math.max(minSize, startHeight + deltaY)
+            newX = startPosX + (startWidth - newWidth)
+            break
+          case 'ne': // Northeast
+            newWidth = Math.max(minSize, startWidth + deltaX)
+            newHeight = Math.max(minSize, startHeight - deltaY)
+            newY = startPosY + (startHeight - newHeight)
+            break
+          case 'nw': // Northwest
+            newWidth = Math.max(minSize, startWidth - deltaX)
+            newHeight = Math.max(minSize, startHeight - deltaY)
+            newX = startPosX + (startWidth - newWidth)
+            newY = startPosY + (startHeight - newHeight)
+            break
+        }
       }
       
-             // Update settings with new position and store custom size locally
-       onSettingsChange({
-         ...settings,
-         position: { x: newX, y: newY }
-       })
-       setCustomVideoSize({ width: newWidth, height: newHeight })
+      // Update settings with new position and store custom size locally
+      onSettingsChange({
+        ...settings,
+        position: { x: newX, y: newY }
+      })
+      setCustomVideoSize({ width: newWidth, height: newHeight })
     }
     
     const handleMouseUp = () => {
@@ -611,7 +648,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
           setSelectedItem(null) // Deselect board items
         }}
       >
-        <div className={`relative overflow-hidden ${settings.isDragging ? 'scale-105' : ''} transition-all duration-200`}>
+        <div className={`relative overflow-hidden ${getShapeClass()} ${settings.isDragging ? 'scale-105' : ''} transition-all duration-200`}>
           <div className="relative">
             {/* Drag handle indicator */}
             {settings.isDragging && (
@@ -624,7 +661,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
             )}
 
             {/* Camera loading placeholder */}
-            <div className={`${getSizeClass()} ${getShapeClass()} bg-gray-800 flex items-center justify-center text-white text-sm absolute inset-0 z-0`}
+            <div className={`${customVideoSize ? 'w-full h-full' : getSizeClass()} ${getShapeClass()} bg-gray-800 flex items-center justify-center text-white text-sm absolute inset-0 z-0`}
                  style={{ border: `4px solid ${settings.color}` }}>
               <div className="text-center">
                 <div className="animate-pulse mb-2">📹</div>
