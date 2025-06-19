@@ -38,7 +38,7 @@ export default function VideoPresenter() {
     virtualBackground: null,
     showPointer: true,
     size: 'medium',
-    position: { x: 0, y: 0 },
+    position: { x: 16, y: 16 },
     isDragging: false,
   })
 
