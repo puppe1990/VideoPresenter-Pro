@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import VideoCanvas from './VideoCanvas'
 import ControlsPanel from './ControlsPanel'
 import TopBar from './TopBar'
+import Teleprompter from './Teleprompter'
 
 
 export interface PresenterSettings {
@@ -28,6 +29,7 @@ export default function VideoPresenter() {
   const [recordedMimeType, setRecordedMimeType] = useState<string>('')
   const [recordingSource, setRecordingSource] = useState<RecordingSource>('camera')
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null)
+  const [isTeleprompterVisible, setIsTeleprompterVisible] = useState(false)
   const [settings, setSettings] = useState<PresenterSettings>({
     backgroundType: 'visible',
     shape: 'rectangle',
@@ -395,6 +397,10 @@ export default function VideoPresenter() {
     }
   }
 
+  const handleToggleTeleprompter = () => {
+    setIsTeleprompterVisible(!isTeleprompterVisible)
+  }
+
 
 
   return (
@@ -427,8 +433,15 @@ export default function VideoPresenter() {
           onClearRecording={clearRecording}
           recordedMimeType={recordedMimeType}
           onPictureInPicture={handlePictureInPicture}
+          onToggleTeleprompter={handleToggleTeleprompter}
         />
       </div>
+
+      {/* Teleprompter - positioned outside the recording area */}
+      <Teleprompter
+        isVisible={isTeleprompterVisible}
+        onToggleVisibility={handleToggleTeleprompter}
+      />
     </div>
   )
 } 

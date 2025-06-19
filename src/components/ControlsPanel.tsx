@@ -1,7 +1,7 @@
 'use client'
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
-import { Eye, EyeOff, Square, Circle, CornerUpRight, MousePointer, Settings, Maximize2, RotateCcw, Video, Download } from 'lucide-react'
+import { Eye, EyeOff, Square, Circle, CornerUpRight, MousePointer, Settings, Maximize2, RotateCcw, Video, Download, Type } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -25,6 +25,7 @@ interface ControlsPanelProps {
   onClearRecording?: () => void
   recordedMimeType?: string
   onPictureInPicture: () => void
+  onToggleTeleprompter: () => void
 }
 
 export default function ControlsPanel({ 
@@ -40,7 +41,8 @@ export default function ControlsPanel({
   onDownloadRecording,
   onClearRecording,
   recordedMimeType,
-  onPictureInPicture
+  onPictureInPicture,
+  onToggleTeleprompter
 }: ControlsPanelProps) {
   const backgroundOptions = [
     { value: 'visible', label: 'Visible', icon: Eye },
@@ -370,8 +372,26 @@ export default function ControlsPanel({
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Additional settings</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Button variant="ghost" size="sm" className="text-sm">
+        <CardContent className="space-y-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-sm w-full justify-start"
+            onClick={onToggleTeleprompter}
+          >
+            <Type className="mr-2 h-4 w-4" />
+            Teleprompter
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-sm w-full justify-start"
+            onClick={onPictureInPicture}
+          >
+            <Maximize2 className="mr-2 h-4 w-4" />
+            Picture in Picture
+          </Button>
+          <Button variant="ghost" size="sm" className="text-sm w-full justify-start">
             <Settings className="mr-2 h-4 w-4" />
             Advanced options
           </Button>
