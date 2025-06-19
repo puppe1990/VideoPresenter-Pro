@@ -1,7 +1,7 @@
 'use client'
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
-import { Eye, EyeOff, Square, Circle, CornerUpRight, MousePointer, Settings, Maximize2, RotateCcw, Video, Download, Type } from 'lucide-react'
+import { Eye, EyeOff, Square, Circle, CornerUpRight, MousePointer, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -26,6 +26,7 @@ interface ControlsPanelProps {
   recordedMimeType?: string
   onPictureInPicture: () => void
   onToggleTeleprompter: () => void
+  onToggleCameraPopup: () => void
 }
 
 export default function ControlsPanel({ 
@@ -42,7 +43,8 @@ export default function ControlsPanel({
   onClearRecording,
   recordedMimeType,
   onPictureInPicture,
-  onToggleTeleprompter
+  onToggleTeleprompter,
+  onToggleCameraPopup
 }: ControlsPanelProps) {
   const backgroundOptions = [
     { value: 'visible', label: 'Visible', icon: Eye },
@@ -381,6 +383,15 @@ export default function ControlsPanel({
           >
             <Type className="mr-2 h-4 w-4" />
             Teleprompter
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-sm w-full justify-start"
+            onClick={onToggleCameraPopup}
+          >
+            <Camera className="mr-2 h-4 w-4" />
+            Camera Popup
           </Button>
           <Button 
             variant="ghost" 

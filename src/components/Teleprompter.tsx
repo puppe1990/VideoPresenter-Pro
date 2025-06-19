@@ -387,9 +387,6 @@ Thank you for watching, and let's begin!`)
   // Hide during recording if auto-hide is enabled
   const shouldHide = autoHideDuringRecording && isRecording
 
-  // Force hide during recording in "both" mode to prevent screen capture
-  const forceHide = isRecording && !autoHideDuringRecording
-
   return (
     <div 
       ref={teleprompterRef}

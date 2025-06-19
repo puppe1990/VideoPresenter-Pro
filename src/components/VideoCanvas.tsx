@@ -108,7 +108,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     return hasValidType || hasValidExtension
   }
 
-  const handleFiles = async (files: FileList | File[]) => {
+  const handleFiles = useCallback(async (files: FileList | File[]) => {
     setProcessingFile(true)
     const fileArray = Array.from(files)
     const validFiles = fileArray.filter(isValidFileType)
@@ -146,7 +146,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     } finally {
       setProcessingFile(false)
     }
-  }
+  }, [boardItems])
 
   // Drag and drop event handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {

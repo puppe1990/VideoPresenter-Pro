@@ -30,6 +30,7 @@ export default function VideoPresenter() {
   const [recordingSource, setRecordingSource] = useState<RecordingSource>('camera')
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null)
   const [isTeleprompterVisible, setIsTeleprompterVisible] = useState(false)
+  const [isCameraPopupOpen, setIsCameraPopupOpen] = useState(false)
   const [settings, setSettings] = useState<PresenterSettings>({
     backgroundType: 'visible',
     shape: 'rectangle',
@@ -45,6 +46,7 @@ export default function VideoPresenter() {
   const streamRef = useRef<MediaStream | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const cameraPopupRef = useRef<Window | null>(null)
 
   useEffect(() => {
     // Initialize camera
@@ -107,7 +109,7 @@ export default function VideoPresenter() {
         URL.revokeObjectURL(downloadUrl)
       }
     }
-  }, [])
+  }, [downloadUrl, isRecording, screenStream])
 
   const getScreenStream = async () => {
     try {
@@ -345,7 +347,7 @@ export default function VideoPresenter() {
             // Draw video frame (even if not fully loaded)
             try {
               ctx.drawImage(video, 0, 0, size, size)
-            } catch (e) {
+            } catch {
               // If video can't be drawn, create a subtle circle instead of black rectangle
               ctx.fillStyle = settings.color + '20' // Very transparent color
               ctx.fill()
@@ -401,6 +403,177 @@ export default function VideoPresenter() {
     setIsTeleprompterVisible(!isTeleprompterVisible)
   }
 
+  const handleToggleCameraPopup = () => {
+    if (isCameraPopupOpen) {
+      // Close popup
+      if (cameraPopupRef.current) {
+        cameraPopupRef.current.close()
+        cameraPopupRef.current = null
+      }
+      setIsCameraPopupOpen(false)
+    } else {
+      // Open popup
+      openCameraPopup()
+    }
+  }
+
+  const openCameraPopup = () => {
+    const popup = window.open(
+      '',
+      'camera-popup',
+      'width=400,height=300,left=100,top=100,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
+    )
+
+    if (popup) {
+      cameraPopupRef.current = popup
+      setIsCameraPopupOpen(true)
+
+      // Create the popup content
+      popup.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Camera View</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background: #000;
+              overflow: hidden;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+            }
+            video {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+            .controls {
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              background: rgba(0,0,0,0.8);
+              padding: 8px;
+              border-radius: 6px;
+              display: flex;
+              gap: 8px;
+            }
+            button {
+              background: #333;
+              color: white;
+              border: none;
+              padding: 6px 10px;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 12px;
+            }
+            button:hover {
+              background: #555;
+            }
+            .recording-indicator {
+              position: fixed;
+              top: 10px;
+              left: 10px;
+              background: rgba(220, 38, 38, 0.2);
+              border: 1px solid rgba(220, 38, 38, 0.5);
+              padding: 6px 10px;
+              border-radius: 4px;
+              font-size: 11px;
+              color: #fca5a5;
+              display: ${isRecording ? 'flex' : 'none'};
+              align-items: center;
+              gap: 6px;
+            }
+            .pulse {
+              width: 6px;
+              height: 6px;
+              background: #dc2626;
+              border-radius: 50%;
+              animation: pulse 1s infinite;
+            }
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.3; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="recording-indicator">
+            <div class="pulse"></div>
+            🔴 RECORDING
+          </div>
+          <div class="controls">
+            <button onclick="togglePiP()">📺 PiP</button>
+            <button onclick="window.close()">✕ Close</button>
+          </div>
+          <video id="popup-video" autoplay playsinline muted></video>
+          <script>
+            function togglePiP() {
+              const video = document.getElementById('popup-video');
+              if (document.pictureInPictureElement) {
+                document.exitPictureInPicture();
+              } else {
+                video.requestPictureInPicture();
+              }
+            }
+            
+            // Handle window closing
+            window.addEventListener('beforeunload', function() {
+              window.opener.postMessage('camera-popup-closing', '*');
+            });
+          </script>
+        </body>
+        </html>
+      `)
+      popup.document.close()
+
+      // Set up the video stream in the popup
+      const popupVideo = popup.document.getElementById('popup-video') as HTMLVideoElement
+      if (popupVideo && streamRef.current) {
+        popupVideo.srcObject = streamRef.current
+      }
+
+      // Listen for popup closing
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          setIsCameraPopupOpen(false)
+          cameraPopupRef.current = null
+          clearInterval(checkClosed)
+        }
+      }, 1000)
+
+      // Handle messages from popup
+      window.addEventListener('message', (event) => {
+        if (event.data === 'camera-popup-closing') {
+          setIsCameraPopupOpen(false)
+          cameraPopupRef.current = null
+        }
+      })
+    }
+  }
+
+  // Update popup video stream when it changes
+  useEffect(() => {
+    if (cameraPopupRef.current && streamRef.current) {
+      const popupVideo = cameraPopupRef.current.document.getElementById('popup-video') as HTMLVideoElement
+      if (popupVideo) {
+        popupVideo.srcObject = streamRef.current
+      }
+    }
+  }, [streamRef.current])
+
+  // Update recording indicator in popup
+  useEffect(() => {
+    if (cameraPopupRef.current) {
+      const indicator = cameraPopupRef.current.document.querySelector('.recording-indicator') as HTMLElement
+      if (indicator) {
+        indicator.style.display = isRecording ? 'flex' : 'none'
+      }
+    }
+  }, [isRecording])
+
 
 
   return (
@@ -434,6 +607,7 @@ export default function VideoPresenter() {
           recordedMimeType={recordedMimeType}
           onPictureInPicture={handlePictureInPicture}
           onToggleTeleprompter={handleToggleTeleprompter}
+          onToggleCameraPopup={handleToggleCameraPopup}
         />
       </div>
 
