@@ -43,7 +43,7 @@ Feel free to edit this text to include your own presentation script.
 Thank you for watching, and let's begin!`)
   
   const [isScrolling, setIsScrolling] = useState(false)
-  const [scrollSpeed, setScrollSpeed] = useState(2)
+  const [scrollSpeed, setScrollSpeed] = useState(1.5)
   const [fontSize, setFontSize] = useState(24)
   const [lineHeight, setLineHeight] = useState(1.6)
   const [isMinimized, setIsMinimized] = useState(false)
@@ -72,30 +72,6 @@ Thank you for watching, and let's begin!`)
     
     setIsScrolling(true)
     lastTimestampRef.current = performance.now()
-    
-    const scroll = (timestamp: number) => {
-      if (!scrollContainerRef.current) return
-      
-      const deltaTime = timestamp - lastTimestampRef.current
-      lastTimestampRef.current = timestamp
-      
-      // Scroll based on speed setting (pixels per second)
-      const scrollAmount = (scrollSpeed * deltaTime) / 16.67 // Normalize for 60fps
-      scrollContainerRef.current.scrollTop += scrollAmount
-      
-      // Check if we've reached the end
-      const container = scrollContainerRef.current
-      if (container.scrollTop >= container.scrollHeight - container.clientHeight) {
-        setIsScrolling(false)
-        return
-      }
-      
-      if (isScrolling) {
-        animationRef.current = requestAnimationFrame(scroll)
-      }
-    }
-    
-    animationRef.current = requestAnimationFrame(scroll)
   }
 
   const stopScrolling = () => {
@@ -182,13 +158,52 @@ Thank you for watching, and let's begin!`)
     }
   }, [])
 
-  // Stop scrolling when isScrolling becomes false
+  // Main scrolling effect
   useEffect(() => {
-    if (!isScrolling && animationRef.current) {
-      cancelAnimationFrame(animationRef.current)
-      animationRef.current = null
+    if (!isScrolling) {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+        animationRef.current = null
+      }
+      return
     }
-  }, [isScrolling])
+
+    const scroll = (timestamp: number) => {
+      if (!scrollContainerRef.current) return
+      
+      const deltaTime = timestamp - lastTimestampRef.current
+      lastTimestampRef.current = timestamp
+      
+      // Scroll based on speed setting (pixels per second)
+      // scrollSpeed range: 0.5 - 5.0
+      // Convert to actual pixels per second: 10-100 pixels/sec
+      const pixelsPerSecond = scrollSpeed * 20
+      const scrollAmount = (pixelsPerSecond * deltaTime) / 1000 // deltaTime is in milliseconds
+      scrollContainerRef.current.scrollTop += scrollAmount
+      
+      // Check if we've reached the end
+      const container = scrollContainerRef.current
+      if (container.scrollTop >= container.scrollHeight - container.clientHeight) {
+        setIsScrolling(false)
+        return
+      }
+      
+      // Continue scrolling
+      animationRef.current = requestAnimationFrame(scroll)
+    }
+    
+    // Start the animation loop
+    lastTimestampRef.current = performance.now()
+    animationRef.current = requestAnimationFrame(scroll)
+    
+    // Cleanup function
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+        animationRef.current = null
+      }
+    }
+  }, [isScrolling, scrollSpeed])
 
   if (!isVisible) return null
 
@@ -202,7 +217,7 @@ Thank you for watching, and let's begin!`)
         cursor: isDragging ? 'grabbing' : 'default'
       }}
     >
-      <Card className="bg-black/90 backdrop-blur-sm border-gray-700 text-white shadow-2xl">
+      <Card className="bg-gray-900/95 backdrop-blur-sm border-gray-600 text-white shadow-2xl">
         {/* Header */}
         <CardHeader 
           className="pb-2 cursor-grab active:cursor-grabbing select-none"
@@ -248,19 +263,19 @@ Thank you for watching, and let's begin!`)
             {showSettings && (
               <div className="space-y-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-300">Speed: {scrollSpeed}x</Label>
+                  <Label className="text-xs text-gray-200 font-medium">Speed: {scrollSpeed}x ({Math.round(scrollSpeed * 20)} px/sec)</Label>
                   <Slider
                     value={[scrollSpeed]}
                     onValueChange={(value) => setScrollSpeed(value[0])}
-                    min={0.5}
-                    max={5}
+                    min={0.3}
+                    max={3}
                     step={0.1}
                     className="w-full"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-300">Font Size: {fontSize}px</Label>
+                  <Label className="text-xs text-gray-200 font-medium">Font Size: {fontSize}px</Label>
                   <Slider
                     value={[fontSize]}
                     onValueChange={(value) => setFontSize(value[0])}
@@ -272,7 +287,7 @@ Thank you for watching, and let's begin!`)
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-300">Line Height: {lineHeight}</Label>
+                  <Label className="text-xs text-gray-200 font-medium">Line Height: {lineHeight}</Label>
                   <Slider
                     value={[lineHeight]}
                     onValueChange={(value) => setLineHeight(value[0])}
@@ -284,7 +299,7 @@ Thank you for watching, and let's begin!`)
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs text-gray-300">Mirror Text</Label>
+                  <Label className="text-xs text-gray-200 font-medium">Mirror Text</Label>
                   <Switch
                     checked={mirrorText}
                     onCheckedChange={setMirrorText}
@@ -344,18 +359,20 @@ Thank you for watching, and let's begin!`)
             {/* Text Display Area */}
             <div 
               ref={scrollContainerRef}
-              className="h-64 overflow-y-auto bg-black/50 rounded-lg p-4 border border-gray-700 scroll-smooth"
+              className="h-64 overflow-y-auto bg-black/80 rounded-lg p-6 border border-gray-600 scroll-smooth shadow-inner"
               style={{
                 scrollBehavior: 'smooth'
               }}
             >
               <div 
-                className="whitespace-pre-wrap leading-relaxed text-center"
+                className="whitespace-pre-wrap leading-relaxed text-center text-gray-50"
                 style={{
                   fontSize: `${fontSize}px`,
                   lineHeight: lineHeight,
                   transform: mirrorText ? 'scaleX(-1)' : 'none',
-                  fontFamily: 'ui-serif, Georgia, serif'
+                  fontFamily: 'ui-serif, Georgia, serif',
+                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+                  fontWeight: '500'
                 }}
               >
                 {text}
@@ -364,12 +381,12 @@ Thank you for watching, and let's begin!`)
 
             {/* Text Editor */}
             <div className="space-y-2">
-              <Label className="text-xs text-gray-300">Edit Script:</Label>
+              <Label className="text-xs text-gray-200 font-medium">Edit Script:</Label>
               <textarea
                 ref={textAreaRef}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                className="w-full h-24 p-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-24 p-3 bg-gray-800/80 border border-gray-600 rounded-lg text-gray-100 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 placeholder-gray-400"
                 placeholder="Enter your teleprompter script here..."
               />
             </div>
