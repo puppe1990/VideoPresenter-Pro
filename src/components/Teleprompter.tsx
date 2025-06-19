@@ -23,9 +23,10 @@ import {
 interface TeleprompterProps {
   isVisible: boolean
   onToggleVisibility: () => void
+  isRecording?: boolean
 }
 
-export default function Teleprompter({ isVisible, onToggleVisibility }: TeleprompterProps) {
+export default function Teleprompter({ isVisible, onToggleVisibility, isRecording = false }: TeleprompterProps) {
   const [text, setText] = useState(`Welcome to your video presentation!
 
 Today we'll be covering several important topics that will help you understand the key concepts we're discussing.
@@ -49,6 +50,9 @@ Thank you for watching, and let's begin!`)
   const [isMinimized, setIsMinimized] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [mirrorText, setMirrorText] = useState(false)
+  const [isCompactMode, setIsCompactMode] = useState(false)
+  const [opacity, setOpacity] = useState(0.95)
+  const [autoHideDuringRecording, setAutoHideDuringRecording] = useState(false)
   
   // Drag functionality state
   const [position, setPosition] = useState(() => {
@@ -66,6 +70,7 @@ Thank you for watching, and let's begin!`)
   const animationRef = useRef<number | null>(null)
   const lastTimestampRef = useRef<number>(0)
   const teleprompterRef = useRef<HTMLDivElement>(null)
+  const popupWindowRef = useRef<Window | null>(null)
 
   const startScrolling = () => {
     if (!scrollContainerRef.current) return
@@ -205,19 +210,217 @@ Thank you for watching, and let's begin!`)
     }
   }, [isScrolling, scrollSpeed])
 
+  // Manage popup window for recording
+  useEffect(() => {
+    if (isRecording && !autoHideDuringRecording) {
+      // Open popup window for teleprompter during recording
+      const popup = window.open(
+        '', 
+        'teleprompter-popup',
+        'width=400,height=600,left=0,top=0,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
+      )
+      
+      if (popup) {
+        popupWindowRef.current = popup
+        
+        // Style the popup
+        popup.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Teleprompter</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 20px;
+                background: #111;
+                color: #f0f0f0;
+                font-family: Georgia, serif;
+                overflow-y: auto;
+              }
+              .teleprompter-content {
+                font-size: ${fontSize}px;
+                line-height: ${lineHeight};
+                text-align: center;
+                white-space: pre-wrap;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+                font-weight: 500;
+                transform: ${mirrorText ? 'scaleX(-1)' : 'none'};
+              }
+              .controls {
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: rgba(0,0,0,0.8);
+                padding: 10px;
+                border-radius: 8px;
+                border: 1px solid #444;
+              }
+              button {
+                background: #333;
+                color: white;
+                border: none;
+                padding: 8px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin: 2px;
+              }
+              button:hover {
+                background: #555;
+              }
+              .recording-indicator {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                background: rgba(220, 38, 38, 0.2);
+                border: 1px solid rgba(220, 38, 38, 0.5);
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              }
+              .pulse {
+                width: 8px;
+                height: 8px;
+                background: #dc2626;
+                border-radius: 50%;
+                animation: pulse 1s infinite;
+              }
+              @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.3; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="recording-indicator">
+              <div class="pulse"></div>
+              🔴 GRAVANDO - Teleprompter em janela separada
+            </div>
+            <div class="controls">
+              <button onclick="startScroll()">▶️ Play</button>
+              <button onclick="pauseScroll()">⏸️ Pause</button>
+              <button onclick="resetScroll()">🔄 Reset</button>
+              <button onclick="scrollUp()">⬆️</button>
+              <button onclick="scrollDown()">⬇️</button>
+            </div>
+            <div id="teleprompter-text" class="teleprompter-content">${text}</div>
+            <script>
+              let isScrolling = false;
+              let scrollSpeed = ${scrollSpeed};
+              let animationId = null;
+              let lastTimestamp = 0;
+              
+              function startScroll() {
+                if (isScrolling) return;
+                isScrolling = true;
+                lastTimestamp = performance.now();
+                
+                function scroll(timestamp) {
+                  const deltaTime = timestamp - lastTimestamp;
+                  lastTimestamp = timestamp;
+                  
+                  const pixelsPerSecond = scrollSpeed * 20;
+                  const scrollAmount = (pixelsPerSecond * deltaTime) / 1000;
+                  window.scrollBy(0, scrollAmount);
+                  
+                  if (window.scrollY >= document.body.scrollHeight - window.innerHeight) {
+                    isScrolling = false;
+                    return;
+                  }
+                  
+                  if (isScrolling) {
+                    animationId = requestAnimationFrame(scroll);
+                  }
+                }
+                
+                animationId = requestAnimationFrame(scroll);
+              }
+              
+              function pauseScroll() {
+                isScrolling = false;
+                if (animationId) {
+                  cancelAnimationFrame(animationId);
+                  animationId = null;
+                }
+              }
+              
+              function resetScroll() {
+                pauseScroll();
+                window.scrollTo(0, 0);
+              }
+              
+              function scrollUp() {
+                window.scrollBy(0, -50);
+              }
+              
+              function scrollDown() {
+                window.scrollBy(0, 50);
+              }
+              
+              // Auto-start scrolling if it was running
+              ${isScrolling ? 'startScroll();' : ''}
+            </script>
+          </body>
+          </html>
+        `)
+        popup.document.close()
+      }
+    } else if (!isRecording && popupWindowRef.current) {
+      // Close popup when recording stops
+      popupWindowRef.current.close()
+      popupWindowRef.current = null
+    }
+    
+    return () => {
+      if (popupWindowRef.current) {
+        popupWindowRef.current.close()
+        popupWindowRef.current = null
+      }
+    }
+  }, [isRecording, autoHideDuringRecording, text, fontSize, lineHeight, mirrorText, scrollSpeed, isScrolling])
+
   if (!isVisible) return null
+
+  // Hide during recording if auto-hide is enabled
+  const shouldHide = autoHideDuringRecording && isRecording
+
+  // Force hide during recording in "both" mode to prevent screen capture
+  const forceHide = isRecording && !autoHideDuringRecording
 
   return (
     <div 
       ref={teleprompterRef}
-      className="fixed z-50 w-96 max-w-[calc(100vw-2rem)]"
+      className={`fixed max-w-[calc(100vw-2rem)] transition-all duration-200 ${
+        isCompactMode ? 'w-80' : 'w-96'
+      } ${shouldHide ? 'pointer-events-none opacity-0 scale-95' : 'z-50'}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
-        cursor: isDragging ? 'grabbing' : 'default'
+        cursor: isDragging ? 'grabbing' : 'default',
+        opacity: shouldHide ? 0 : opacity,
+        transform: shouldHide ? 'scale(0.95)' : 'scale(1)',
+        zIndex: isRecording ? 999999 : 9999, // Z-index MUITO ALTO durante gravação
+        // CRITICAL: Exclude from screen capture
+        mixBlendMode: 'screen', // Blend mode que pode excluir da captura
+        isolation: 'isolate',
+        filter: isRecording ? 'contrast(0) brightness(2)' : 'none', // Filtro especial durante gravação
+        // Browser-specific screen capture exclusion
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+        pointerEvents: 'auto',
+        // Força o elemento a ficar em camada separada
+        willChange: 'transform, opacity',
+        backfaceVisibility: 'hidden' as const,
+        perspective: '1000px',
+        position: 'fixed' as const
       }}
+      data-html2canvas-ignore="true"
+      data-screenshot-ignore="true"
     >
-      <Card className="bg-gray-900/95 backdrop-blur-sm border-gray-600 text-white shadow-2xl">
+      <Card className="bg-gray-900/95 backdrop-blur-sm border-gray-600 text-white shadow-2xl hover:shadow-3xl transition-shadow duration-200">
         {/* Header */}
         <CardHeader 
           className="pb-2 cursor-grab active:cursor-grabbing select-none"
@@ -229,6 +432,19 @@ Thank you for watching, and let's begin!`)
               Teleprompter
             </CardTitle>
             <div className="flex items-center gap-1 pointer-events-auto">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsCompactMode(!isCompactMode)}
+                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                title="Toggle compact mode"
+              >
+                <div className="h-3 w-3 flex items-center justify-center">
+                  <div className={`transition-all duration-200 ${isCompactMode ? 'scale-75' : 'scale-100'}`}>
+                    <div className="w-2 h-2 border border-current rounded-sm" />
+                  </div>
+                </div>
+              </Button>
               <Button
                 size="sm"
                 variant="ghost"
@@ -305,6 +521,38 @@ Thank you for watching, and let's begin!`)
                     onCheckedChange={setMirrorText}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-gray-200 font-medium">Opacity: {Math.round(opacity * 100)}%</Label>
+                  <Slider
+                    value={[opacity]}
+                    onValueChange={(value) => setOpacity(value[0])}
+                    min={0.3}
+                    max={1}
+                    step={0.05}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-gray-200 font-medium">Esconder Durante Gravação</Label>
+                  <Switch
+                    checked={autoHideDuringRecording}
+                    onCheckedChange={setAutoHideDuringRecording}
+                  />
+                </div>
+                
+                {isRecording && !autoHideDuringRecording && (
+                  <div className="p-2 bg-red-900/30 border border-red-700/50 rounded-lg">
+                    <div className="text-xs text-red-200 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      🔴 GRAVANDO - Teleprompter em janela separada
+                    </div>
+                    <div className="text-xs text-gray-300 mt-1">
+                      Verifique se a janela popup do teleprompter abriu
+                    </div>
+                  </div>
+                )}
                 
                 <Separator className="bg-gray-700" />
               </div>
@@ -359,21 +607,23 @@ Thank you for watching, and let's begin!`)
             {/* Text Display Area */}
             <div 
               ref={scrollContainerRef}
-              className="h-64 overflow-y-auto bg-black/80 rounded-lg p-6 border border-gray-600 scroll-smooth shadow-inner"
+              className={`overflow-y-auto bg-black/80 rounded-lg border border-gray-600 scroll-smooth shadow-inner transition-all duration-200 ${
+                isCompactMode ? 'h-48 p-4' : 'h-64 p-6'
+              }`}
               style={{
                 scrollBehavior: 'smooth'
               }}
             >
               <div 
                 className="whitespace-pre-wrap leading-relaxed text-center text-gray-50"
-                style={{
-                  fontSize: `${fontSize}px`,
-                  lineHeight: lineHeight,
-                  transform: mirrorText ? 'scaleX(-1)' : 'none',
-                  fontFamily: 'ui-serif, Georgia, serif',
-                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
-                  fontWeight: '500'
-                }}
+                                  style={{
+                    fontSize: `${isCompactMode ? fontSize * 0.9 : fontSize}px`,
+                    lineHeight: lineHeight,
+                    transform: mirrorText ? 'scaleX(-1)' : 'none',
+                    fontFamily: 'ui-serif, Georgia, serif',
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+                    fontWeight: '500'
+                  }}
               >
                 {text}
               </div>

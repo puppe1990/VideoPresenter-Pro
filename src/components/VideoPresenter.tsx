@@ -441,6 +441,7 @@ export default function VideoPresenter() {
       <Teleprompter
         isVisible={isTeleprompterVisible}
         onToggleVisibility={handleToggleTeleprompter}
+        isRecording={isRecording}
       />
     </div>
   )
