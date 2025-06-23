@@ -49,14 +49,19 @@ export default function VideoPresenter() {
   const cameraPopupRef = useRef<Window | null>(null)
 
   useEffect(() => {
-    // Initialize camera
+    // Initialize camera only once
     async function initCamera() {
+      if (streamRef.current) {
+        console.log('🔄 Camera already initialized, skipping...')
+        return
+      }
+      
       try {
-        console.log('Requesting camera access...')
+        console.log('📹 Requesting camera access...')
         
         // Check if getUserMedia is supported
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          console.error('getUserMedia is not supported in this browser')
+          console.error('❌ getUserMedia is not supported in this browser')
           return
         }
 
@@ -66,20 +71,42 @@ export default function VideoPresenter() {
             height: { ideal: 720 },
             facingMode: 'user'
           },
-          audio: true,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            sampleRate: 44100
+          },
         })
         
-        console.log('Camera access granted, stream:', stream)
+        console.log('✅ Camera access granted')
+        console.log(`📊 Stream tracks: ${stream.getVideoTracks().length} video, ${stream.getAudioTracks().length} audio`)
+        
+        // Debug track details
+        stream.getTracks().forEach((track, index) => {
+          console.log(`🎯 Track ${index}: ${track.kind} - ${track.label} - Ready: ${track.readyState}`)
+        })
+        
         streamRef.current = stream
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream
-          console.log('Video stream assigned to video element')
+          console.log('📺 Video stream assigned to video element')
+          
+          // Wait for video to be ready
+          videoRef.current.onloadedmetadata = () => {
+            console.log('🎥 Video metadata loaded - ready for recording')
+          }
         }
       } catch (err) {
-        console.error('Error accessing camera:', err)
-        if (err instanceof Error) {
-          console.error('Error details:', err.message)
+        console.error('❌ Error accessing camera:', err)
+        if (err instanceof DOMException) {
+          if (err.name === 'NotAllowedError') {
+            console.error('🚫 Camera permission denied by user')
+          } else if (err.name === 'NotFoundError') {
+            console.error('📹 No camera device found')
+          } else if (err.name === 'NotReadableError') {
+            console.error('📹 Camera is being used by another application')
+          }
         }
       }
     }
@@ -87,13 +114,26 @@ export default function VideoPresenter() {
     initCamera()
 
     return () => {
+      // Only cleanup on unmount, not on every state change
+      console.log('🔄 Component cleanup triggered')
+    }
+  }, []) // Remove dependencies to prevent re-initialization
+
+  // Separate cleanup effect for unmount
+  useEffect(() => {
+    return () => {
+      console.log('🧹 Component unmounting - full cleanup')
       if (streamRef.current) {
-        console.log('Stopping camera stream')
-        streamRef.current.getTracks().forEach(track => track.stop())
+        console.log('🧹 Stopping camera stream')
+        streamRef.current.getTracks().forEach(track => {
+          track.stop()
+          console.log(`⏹️ Stopped ${track.kind} track`)
+        })
       }
       
       // Cleanup recording resources
       if (mediaRecorderRef.current && isRecording) {
+        console.log('🛑 Stopping recording due to unmount')
         mediaRecorderRef.current.stop()
       }
       
@@ -102,6 +142,7 @@ export default function VideoPresenter() {
       }
       
       if (screenStream) {
+        console.log('🧹 Cleaning up screen stream')
         screenStream.getTracks().forEach(track => track.stop())
       }
       
@@ -109,50 +150,100 @@ export default function VideoPresenter() {
         URL.revokeObjectURL(downloadUrl)
       }
     }
-  }, [downloadUrl, isRecording, screenStream])
+  }, [])
 
   const getScreenStream = async () => {
     try {
+      console.log('🖥️ Requesting screen capture...')
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           width: { ideal: 1920 },
           height: { ideal: 1080 },
           frameRate: { ideal: 30 }
         },
-        audio: true // Include system audio
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          sampleRate: 44100
+        }
+      })
+      
+      // Listen for when user stops screen sharing
+      displayStream.getVideoTracks()[0].addEventListener('ended', () => {
+        console.log('🚫 Screen sharing ended by user')
+        if (isRecording && (recordingSource === 'screen' || recordingSource === 'both')) {
+          console.log('⏹️ Auto-stopping recording due to screen share end')
+          handleStopRecording()
+        }
+        setScreenStream(null)
       })
       
       setScreenStream(displayStream)
+      console.log('✅ Screen capture started')
       return displayStream
-    } catch (error) {
-      console.error('Error accessing screen:', error)
-      throw error
-    }
+          } catch (error) {
+        console.error('Error accessing screen:', error)
+        if (error instanceof DOMException) {
+          if (error.name === 'NotAllowedError') {
+            throw new Error('Screen sharing permission denied')
+          } else if (error.name === 'AbortError') {
+            throw new Error('Screen sharing cancelled by user')
+          }
+        }
+        throw error
+      }
   }
 
   const combineStreams = (cameraStream: MediaStream, screenStream: MediaStream) => {
+    console.log('🔄 Combining camera and screen streams...')
+    
     // Create a new MediaStream that combines both streams
-    // For recording purposes, we'll use the screen stream as primary
-    // but keep the camera stream visible in the UI
     const combinedStream = new MediaStream()
     
     // Add screen video track (primary for recording)
-    screenStream.getVideoTracks().forEach(track => {
+    const screenVideoTracks = screenStream.getVideoTracks()
+    console.log(`📹 Adding ${screenVideoTracks.length} screen video track(s)`)
+    screenVideoTracks.forEach(track => {
       combinedStream.addTrack(track)
     })
     
-    // Add both audio tracks if available
-    cameraStream.getAudioTracks().forEach(track => {
-      combinedStream.addTrack(track)
-    })
-    screenStream.getAudioTracks().forEach(track => {
+    // Add camera audio track (usually better quality than screen audio)
+    const cameraAudioTracks = cameraStream.getAudioTracks()
+    console.log(`🎤 Adding ${cameraAudioTracks.length} camera audio track(s)`)
+    cameraAudioTracks.forEach(track => {
       combinedStream.addTrack(track)
     })
     
+    // Also add screen audio if available (system sounds)
+    const screenAudioTracks = screenStream.getAudioTracks()
+    if (screenAudioTracks.length > 0) {
+      console.log(`🔊 Adding ${screenAudioTracks.length} screen audio track(s)`)
+      screenAudioTracks.forEach(track => {
+        combinedStream.addTrack(track)
+      })
+    } else {
+      console.log('🔇 No screen audio tracks available')
+    }
+    
+    console.log(`✅ Combined stream created with ${combinedStream.getTracks().length} total tracks`)
     return combinedStream
   }
 
   const handleStartRecording = async () => {
+    console.log('🚀 START RECORDING FUNCTION CALLED')
+    console.log('📊 Current state:', { 
+      recordingSource, 
+      isRecording, 
+      hasCamera: !!streamRef.current,
+      cameraStream: streamRef.current?.getTracks().length || 0
+    })
+    
+    // Early exit if already recording
+    if (isRecording) {
+      console.log('⚠️ Already recording, ignoring start request')
+      return
+    }
+    
     try {
       let recordingStream: MediaStream | null = null
 
@@ -160,58 +251,136 @@ export default function VideoPresenter() {
       setRecordedChunks([])
       setDownloadUrl(null)
       setRecordingDuration(0)
+      
+      console.log('🧹 Previous recording cleared')
 
       // Get the appropriate stream based on recording source
       switch (recordingSource) {
         case 'camera':
           if (!streamRef.current) {
-            console.error('No camera stream available for recording')
+            alert('❌ Camera not available. Please ensure camera permissions are granted.')
             return
           }
           recordingStream = streamRef.current
+          console.log('📹 Recording camera stream')
           break
           
         case 'screen':
-          recordingStream = await getScreenStream()
+          try {
+            recordingStream = await getScreenStream()
+            console.log('🖥️ Recording screen stream')
+          } catch (error) {
+            console.error('Screen capture error:', error)
+            alert('❌ Screen capture failed. Please try again and allow screen sharing.')
+            return
+          }
           break
           
         case 'both':
           if (!streamRef.current) {
-            console.error('No camera stream available for recording')
+            alert('❌ Camera not available. Please ensure camera permissions are granted.')
             return
           }
-          const screenStreamForBoth = await getScreenStream()
-          recordingStream = combineStreams(streamRef.current, screenStreamForBoth)
-          // Keep camera stream visible in UI - don't change videoRef.current.srcObject
-          // The recording will use the combined stream, but UI shows camera
+          
+          try {
+            const screenStreamForBoth = await getScreenStream()
+            recordingStream = combineStreams(streamRef.current, screenStreamForBoth)
+            console.log('📹🖥️ Recording both camera and screen')
+          } catch (error) {
+            console.error('Screen capture error for both mode:', error)
+            alert('❌ Screen capture failed. Recording camera only instead.')
+            recordingStream = streamRef.current
+          }
           break
       }
 
       if (!recordingStream) {
-        console.error('No recording stream available')
+        alert('❌ No recording stream available. Please check your camera and screen permissions.')
         return
       }
 
-      // Create MediaRecorder with the selected stream
-      let mimeType = 'video/webm; codecs=vp9'
+      // Check if MediaRecorder is supported
+      console.log('🔍 Checking MediaRecorder support...')
+      console.log('📝 MediaRecorder available:', typeof MediaRecorder !== 'undefined')
+      console.log('🧪 isTypeSupported method:', typeof MediaRecorder.isTypeSupported)
       
-      // Check for MP4 support first, then fallback to WebM
-      if (MediaRecorder.isTypeSupported('video/mp4; codecs=h264')) {
-        mimeType = 'video/mp4; codecs=h264'
-      } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) {
-        mimeType = 'video/webm; codecs=vp9'
-      } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp8')) {
-        mimeType = 'video/webm; codecs=vp8'
-      } else {
-        mimeType = 'video/webm'
+      if (typeof MediaRecorder === 'undefined') {
+        alert('❌ MediaRecorder not available in this browser. Please use Chrome, Firefox, or Safari.')
+        return
+      }
+      
+      if (!MediaRecorder.isTypeSupported || typeof MediaRecorder.isTypeSupported !== 'function') {
+        alert('❌ Recording not supported in this browser. Please use Chrome, Firefox, or Safari.')
+        return
       }
 
-      const mediaRecorder = new MediaRecorder(recordingStream, {
-        mimeType,
-        videoBitsPerSecond: 2500000, // 2.5 Mbps for good quality
-        audioBitsPerSecond: 128000   // 128 kbps for audio
+      // Find the best supported format
+      console.log('🎭 Testing MIME type support...')
+      
+      const mimeTypes = [
+        'video/webm; codecs=vp9,opus',
+        'video/webm; codecs=vp8,opus', 
+        'video/webm; codecs=vp9',
+        'video/webm; codecs=vp8',
+        'video/webm',
+        'video/mp4',
+        ''
+      ]
+      
+      mimeTypes.forEach(type => {
+        const supported = type ? MediaRecorder.isTypeSupported(type) : true
+        console.log(`🧪 ${type || 'default'}: ${supported ? '✅' : '❌'}`)
+      })
+      
+      let mimeType = 'video/webm'
+      let options: MediaRecorderOptions = {}
+      
+      if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9,opus')) {
+        mimeType = 'video/webm; codecs=vp9,opus'
+        options = {
+          mimeType,
+          videoBitsPerSecond: 2500000,
+          audioBitsPerSecond: 128000
+        }
+      } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp8,opus')) {
+        mimeType = 'video/webm; codecs=vp8,opus'
+        options = {
+          mimeType,
+          videoBitsPerSecond: 2000000,
+          audioBitsPerSecond: 128000
+        }
+      } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) {
+        mimeType = 'video/webm; codecs=vp9'
+        options = { mimeType, videoBitsPerSecond: 2000000 }
+      } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp8')) {
+        mimeType = 'video/webm; codecs=vp8'
+        options = { mimeType, videoBitsPerSecond: 1500000 }
+      } else if (MediaRecorder.isTypeSupported('video/webm')) {
+        mimeType = 'video/webm'
+        options = { mimeType }
+      } else {
+        console.log('⚠️ Using default MediaRecorder settings')
+        mimeType = ''
+        options = {}
+      }
+
+      console.log('🎬 Creating MediaRecorder with:', mimeType, options)
+      console.log('📊 Recording stream details:', {
+        tracks: recordingStream.getTracks().length,
+        video: recordingStream.getVideoTracks().length,
+        audio: recordingStream.getAudioTracks().length,
+        active: recordingStream.active
       })
 
+      let mediaRecorder: MediaRecorder
+      try {
+        mediaRecorder = new MediaRecorder(recordingStream, options)
+        console.log('✅ MediaRecorder created successfully')
+      } catch (mediaRecorderError) {
+        console.error('❌ Failed to create MediaRecorder:', mediaRecorderError)
+        alert(`❌ Failed to create recorder: ${mediaRecorderError instanceof Error ? mediaRecorderError.message : 'Unknown error'}`)
+        return
+      }
       mediaRecorderRef.current = mediaRecorder
       setRecordedMimeType(mimeType)
       const chunks: Blob[] = []
@@ -219,42 +388,86 @@ export default function VideoPresenter() {
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunks.push(event.data)
+          console.log('📦 Recorded chunk:', event.data.size, 'bytes')
         }
       }
 
       mediaRecorder.onstop = () => {
+        console.log('⏹️ Recording stopped, processing', chunks.length, 'chunks')
         const blob = new Blob(chunks, { type: mimeType })
         const url = URL.createObjectURL(blob)
         setDownloadUrl(url)
         setRecordedChunks(chunks)
+        console.log('✅ Recording ready for download:', blob.size, 'bytes')
       }
 
-      mediaRecorder.start()
-      setIsRecording(true)
+      mediaRecorder.onerror = (event) => {
+        console.error('MediaRecorder error:', event)
+        alert('❌ Recording error occurred. Please try again.')
+        setIsRecording(false)
+      }
 
-      // Start recording timer
-      recordingTimerRef.current = setInterval(() => {
-        setRecordingDuration(prev => prev + 1)
-      }, 1000)
+      // Start recording with data interval
+      console.log('▶️ Attempting to start MediaRecorder...')
+      try {
+        mediaRecorder.start(1000) // Collect data every second
+        console.log('✅ MediaRecorder.start() called successfully')
+        setIsRecording(true)
 
-      console.log(`Recording started - Source: ${recordingSource}`)
+        // Start recording timer
+        recordingTimerRef.current = setInterval(() => {
+          setRecordingDuration(prev => prev + 1)
+        }, 1000)
+
+        console.log(`✅ Recording started - Source: ${recordingSource}`)
+        console.log('🎯 Recording state should now be true:', true)
+      } catch (startError) {
+        console.error('❌ Failed to start recording:', startError)
+        alert(`❌ Failed to start recording: ${startError instanceof Error ? startError.message : 'Unknown error'}`)
+        return
+      }
+      
     } catch (error) {
       console.error('Error starting recording:', error)
+      alert(`❌ Recording failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setIsRecording(false)
     }
   }
 
   const handleStopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop()
-      setIsRecording(false)
+      try {
+        console.log('🛑 User requested stop recording...')
+        mediaRecorderRef.current.stop()
+        setIsRecording(false)
 
-      // Stop timer
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current)
-        recordingTimerRef.current = null
+        // Stop timer
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current)
+          recordingTimerRef.current = null
+        }
+
+        // Clean up screen stream if it was used
+        if (screenStream) {
+          console.log('🧹 Cleaning up screen stream')
+          screenStream.getTracks().forEach(track => {
+            track.stop()
+            console.log('⏹️ Stopped screen track:', track.kind)
+          })
+          setScreenStream(null)
+        }
+
+        console.log('✅ Recording stopped successfully')
+      } catch (error) {
+        console.error('Error stopping recording:', error)
+        setIsRecording(false)
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current)
+          recordingTimerRef.current = null
+        }
       }
-
-      console.log('Recording stopped')
+    } else {
+      console.log('⚠️ Stop recording called but not currently recording')
     }
   }
 

@@ -91,6 +91,16 @@ export default function ControlsPanel({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Debug Info */}
+          <div className="text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded border">
+            <div className="font-mono">
+              <div>🎥 Recording: {isRecording ? '✅ YES' : '❌ NO'}</div>
+              <div>📹 Source: {recordingSource}</div>
+              <div>⏱️ Duration: {recordingDuration}s</div>
+              <div>💾 Download: {downloadUrl ? '✅ Ready' : '❌ None'}</div>
+            </div>
+          </div>
+          
           {/* Recording source selection */}
           {!isRecording && (
             <div className="space-y-2">
@@ -128,25 +138,49 @@ export default function ControlsPanel({
           <div className="space-y-2">
             {!isRecording ? (
               <Button
-                onClick={onStartRecording}
+                onClick={() => {
+                  console.log('🎬 RECORD BUTTON CLICKED in ControlsPanel')
+                  console.log('📋 Recording source:', recordingSource)
+                  console.log('🔍 Is recording already?', isRecording)
+                  console.log('📞 Calling onStartRecording...')
+                  onStartRecording()
+                  console.log('✅ onStartRecording called')
+                }}
                 variant="destructive"
                 size="sm"
                 className="w-full"
+                disabled={isRecording}
               >
                 <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
                 Record {recordingSource === 'camera' ? 'Camera' : recordingSource === 'screen' ? 'Screen' : 'Both'}
               </Button>
             ) : (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Recording: {recordingSource}</span>
-                  <span className="font-mono">{formatDuration(recordingDuration)}</span>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      <span className="text-muted-foreground">
+                        Recording {recordingSource === 'camera' ? '📹 Camera' : 
+                                  recordingSource === 'screen' ? '🖥️ Screen' : 
+                                  '📹🖥️ Both'}
+                      </span>
+                    </div>
+                    <span className="font-mono font-semibold text-red-600">{formatDuration(recordingDuration)}</span>
+                  </div>
+                  
+                  {recordingSource === 'both' && (
+                    <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-800">
+                      💡 Screen + Camera recording active
+                    </div>
+                  )}
                 </div>
+                
                 <Button
                   onClick={onStopRecording}
                   variant="destructive"
                   size="sm"
-                  className="w-full animate-pulse"
+                  className="w-full"
                 >
                   <div className="w-2 h-2 bg-white mr-2"></div>
                   Stop Recording
