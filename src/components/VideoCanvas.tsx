@@ -5,7 +5,8 @@ import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Move, Upload, FileImage, FileVideo, FileText, X, Copy } from 'lucide-react'
+import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, Presentation } from 'lucide-react'
+import DocumentViewer from './DocumentViewer'
 
 interface VideoCanvasProps {
   videoRef: React.RefObject<HTMLVideoElement | null>
@@ -38,9 +39,10 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
 
   interface BoardItem {
     id: string
-    type: 'image' | 'video' | 'text'
+    type: 'image' | 'video' | 'text' | 'document'
     src?: string
     content?: string
+    fileName?: string
     x: number
     y: number
     width: number
@@ -96,12 +98,13 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       'image/jpg',
       'image/gif',
       'video/mp4',
+      'application/pdf',
       'application/vnd.ms-powerpoint',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'application/vnd.apple.keynote'
     ]
     
-    const validExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.mp4', '.pptx', '.key']
+    const validExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.mp4', '.pdf', '.pptx', '.key']
     const hasValidType = validTypes.includes(file.type)
     const hasValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext))
     
@@ -114,7 +117,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     const validFiles = fileArray.filter(isValidFileType)
     
     if (validFiles.length === 0) {
-      alert('Please upload valid files: .png, .jpg, .gif, .mp4, .pptx, .key')
+      alert('Please upload valid files: .png, .jpg, .gif, .mp4, .pdf, .pptx, .key')
       setProcessingFile(false)
       return
     }
@@ -124,14 +127,32 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         console.log('Processing file:', file.name, file.type)
         
         const fileUrl = URL.createObjectURL(file)
+        
+        // Determine file type
+        let itemType: 'image' | 'video' | 'document' = 'image'
+        if (file.type.startsWith('video/')) {
+          itemType = 'video'
+        } else if (
+          file.type === 'application/pdf' ||
+          file.type === 'application/vnd.ms-powerpoint' ||
+          file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+          file.type === 'application/vnd.apple.keynote' ||
+          file.name.toLowerCase().endsWith('.pdf') ||
+          file.name.toLowerCase().endsWith('.pptx') ||
+          file.name.toLowerCase().endsWith('.key')
+        ) {
+          itemType = 'document'
+        }
+        
         const newItem: BoardItem = {
           id: `item-${Date.now()}-${Math.random()}`,
-          type: file.type.startsWith('image/') ? 'image' : 'video',
+          type: itemType,
           src: fileUrl,
+          fileName: file.name,
           x: Math.random() * 300 + 100, // Random position
           y: Math.random() * 200 + 100,
-          width: file.type.startsWith('image/') ? 200 : 300,
-          height: file.type.startsWith('image/') ? 150 : 200,
+          width: itemType === 'image' ? 200 : itemType === 'video' ? 300 : 250,
+          height: itemType === 'image' ? 150 : itemType === 'video' ? 200 : 180,
           rotation: 0,
           zIndex: boardItems.length + 1
         }
@@ -596,14 +617,14 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               <Upload className="h-8 w-8 text-primary animate-bounce" />
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Drop Files Here</h3>
-                <p className="text-sm text-muted-foreground">Add images, videos, or presentations to your board</p>
+                <p className="text-sm text-muted-foreground">Add images, videos, PDFs, or presentations to your board</p>
               </div>
             </div>
             <div className="flex items-center justify-center gap-2 text-muted-foreground">
               <FileImage className="h-4 w-4" />
               <FileVideo className="h-4 w-4" />
               <FileText className="h-4 w-4" />
-              <span className="text-xs">(.png, .jpg, .gif, .mp4, .pptx, .key)</span>
+              <span className="text-xs">(.png, .jpg, .gif, .mp4, .pdf, .pptx, .key)</span>
             </div>
           </div>
         </div>
@@ -774,6 +795,17 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               controls
               muted
             />
+          ) : item.type === 'document' ? (
+            <DocumentViewer
+              src={item.src || ''}
+              fileName={item.fileName || 'Document'}
+              type={
+                item.fileName?.toLowerCase().endsWith('.pdf') ? 'pdf' :
+                item.fileName?.toLowerCase().endsWith('.pptx') ? 'ppt' :
+                item.fileName?.toLowerCase().endsWith('.key') ? 'key' : 'pdf'
+              }
+              className="w-full h-full"
+            />
           ) : (
             <div className="w-full h-full bg-white rounded-lg shadow-lg p-4 text-black">
               {item.content || 'Text content'}
@@ -850,7 +882,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".png,.jpg,.jpeg,.gif,.mp4,.pptx,.key"
+              accept=".png,.jpg,.jpeg,.gif,.mp4,.pdf,.pptx,.key"
               onChange={handleFileInputChange}
               className="hidden"
             />
@@ -876,7 +908,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
                 </div>
                 
                 <p className="text-xs text-muted-foreground mb-3">
-                  (.png, .jpg, .gif, .mp4, .pptx, .key)
+                  (.png, .jpg, .gif, .mp4, .pdf, .pptx, .key)
                 </p>
                 
                 <Button
