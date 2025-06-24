@@ -1,7 +1,8 @@
 'use client'
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
-import { Eye, EyeOff, Square, Circle, CornerUpRight, MousePointer, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera } from 'lucide-react'
+import { Eye, EyeOff, Square, Circle, CornerUpRight, MousePointer, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo } from 'lucide-react'
+import { type ExportFormat, type ConversionProgress, videoExporter } from '@/lib/videoConverter'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -21,12 +22,16 @@ interface ControlsPanelProps {
   onStopRecording: () => void
   recordingDuration: number
   downloadUrl: string | null
-  onDownloadRecording: () => void
+  onDownloadRecording: (format?: ExportFormat) => void
   onClearRecording?: () => void
   recordedMimeType?: string
   onPictureInPicture: () => void
   onToggleTeleprompter: () => void
   onToggleCameraPopup: () => void
+  exportFormat: ExportFormat
+  onExportFormatChange: (format: ExportFormat) => void
+  isConverting: boolean
+  conversionProgress: ConversionProgress | null
 }
 
 export default function ControlsPanel({ 
@@ -44,7 +49,11 @@ export default function ControlsPanel({
   recordedMimeType,
   onPictureInPicture,
   onToggleTeleprompter,
-  onToggleCameraPopup
+  onToggleCameraPopup,
+  exportFormat,
+  onExportFormatChange,
+  isConverting,
+  conversionProgress
 }: ControlsPanelProps) {
   const backgroundOptions = [
     { value: 'visible', label: 'Visible', icon: Eye },
@@ -188,7 +197,7 @@ export default function ControlsPanel({
               </div>
             )}
             
-            {downloadUrl && !isRecording && (
+            {downloadUrl && !isRecording && !isConverting && (
               <div className="space-y-3">
                 {/* Video Preview */}
                 <div className="space-y-2">
@@ -215,17 +224,42 @@ export default function ControlsPanel({
                     </div>
                   </div>
                 </div>
+
+                {/* Export Format Selection */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Export Format:</Label>
+                  <div className="grid grid-cols-2 gap-1">
+                    {(['webm', 'mp4'] as ExportFormat[]).map((format) => {
+                      const formatInfo = videoExporter.getFormatInfo(format)
+                      return (
+                        <Button
+                          key={format}
+                          variant={exportFormat === format ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => onExportFormatChange(format)}
+                          className="text-xs p-2 h-auto flex flex-col gap-1"
+                        >
+                          <span className="text-xs">{formatInfo.icon}</span>
+                          <span className="text-xs font-medium">{formatInfo.name}</span>
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <div className="text-xs text-muted-foreground text-center">
+                    {videoExporter.getFormatInfo(exportFormat).description}
+                  </div>
+                </div>
                 
                 {/* Action Buttons */}
                 <div className="grid grid-cols-2 gap-2">
                   <Button
-                    onClick={onDownloadRecording}
+                    onClick={() => onDownloadRecording()}
                     variant="default"
                     size="sm"
                     className="text-xs"
                   >
                     <Download className="h-3 w-3 mr-1" />
-                    Download
+                    Download {videoExporter.getFormatInfo(exportFormat).name}
                   </Button>
                   {onClearRecording && (
                     <Button
@@ -238,6 +272,34 @@ export default function ControlsPanel({
                       Record Again
                     </Button>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Conversion Progress */}
+            {isConverting && conversionProgress && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Converting to {videoExporter.getFormatInfo(exportFormat).name}</Label>
+                    <div className="text-xs text-muted-foreground">{Math.round(conversionProgress.progress)}%</div>
+                  </div>
+                  
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${conversionProgress.progress}%` }}
+                    />
+                  </div>
+                  
+                  <div className="text-xs text-center text-muted-foreground">
+                    {conversionProgress.stage}
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-center text-xs text-muted-foreground">
+                  <FileVideo className="h-4 w-4 mr-2 animate-pulse" />
+                  This may take a few moments...
                 </div>
               </div>
             )}

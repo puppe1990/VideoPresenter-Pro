@@ -5,6 +5,7 @@ import VideoCanvas from './VideoCanvas'
 import ControlsPanel from './ControlsPanel'
 import TopBar from './TopBar'
 import Teleprompter from './Teleprompter'
+import { videoExporter, type ExportFormat, type ConversionProgress } from '@/lib/videoConverter'
 
 
 export interface PresenterSettings {
@@ -31,6 +32,9 @@ export default function VideoPresenter() {
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null)
   const [isTeleprompterVisible, setIsTeleprompterVisible] = useState(false)
   const [isCameraPopupOpen, setIsCameraPopupOpen] = useState(false)
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('webm')
+  const [isConverting, setIsConverting] = useState(false)
+  const [conversionProgress, setConversionProgress] = useState<ConversionProgress | null>(null)
   const [settings, setSettings] = useState<PresenterSettings>({
     backgroundType: 'visible',
     shape: 'rectangle',
@@ -314,55 +318,33 @@ export default function VideoPresenter() {
         return
       }
 
-      // Find the best supported format
-      console.log('🎭 Testing MIME type support...')
+      // Use the best format the browser supports
+      console.log('🎭 Getting optimal recording format...')
+      const bestFormat = videoExporter.getBestRecordingFormat()
+      const mimeType = bestFormat.mimeType
       
-      const mimeTypes = [
-        'video/webm; codecs=vp9,opus',
-        'video/webm; codecs=vp8,opus', 
-        'video/webm; codecs=vp9',
-        'video/webm; codecs=vp8',
-        'video/webm',
-        'video/mp4',
-        ''
-      ]
+      console.log(`🎬 Selected recording format: ${mimeType} (${bestFormat.format})`)
       
-      mimeTypes.forEach(type => {
-        const supported = type ? MediaRecorder.isTypeSupported(type) : true
-        console.log(`🧪 ${type || 'default'}: ${supported ? '✅' : '❌'}`)
-      })
+      // Set quality options based on format
+      let options: MediaRecorderOptions = { mimeType }
       
-      let mimeType = 'video/webm'
-      let options: MediaRecorderOptions = {}
-      
-      if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9,opus')) {
-        mimeType = 'video/webm; codecs=vp9,opus'
+      if (bestFormat.format === 'mp4') {
+        options = {
+          mimeType,
+          videoBitsPerSecond: 3000000, // Higher quality for MP4
+          audioBitsPerSecond: 128000
+        }
+      } else {
         options = {
           mimeType,
           videoBitsPerSecond: 2500000,
           audioBitsPerSecond: 128000
         }
-      } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp8,opus')) {
-        mimeType = 'video/webm; codecs=vp8,opus'
-        options = {
-          mimeType,
-          videoBitsPerSecond: 2000000,
-          audioBitsPerSecond: 128000
-        }
-      } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) {
-        mimeType = 'video/webm; codecs=vp9'
-        options = { mimeType, videoBitsPerSecond: 2000000 }
-      } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp8')) {
-        mimeType = 'video/webm; codecs=vp8'
-        options = { mimeType, videoBitsPerSecond: 1500000 }
-      } else if (MediaRecorder.isTypeSupported('video/webm')) {
-        mimeType = 'video/webm'
-        options = { mimeType }
-      } else {
-        console.log('⚠️ Using default MediaRecorder settings')
-        mimeType = ''
-        options = {}
       }
+      
+      // Log supported formats for debugging
+      const supportedFormats = videoExporter.getSupportedRecordingFormats()
+      console.log('📋 Browser supports recording in:', supportedFormats)
 
       console.log('🎬 Creating MediaRecorder with:', mimeType, options)
       console.log('📊 Recording stream details:', {
@@ -471,19 +453,55 @@ export default function VideoPresenter() {
     }
   }
 
-  const downloadRecording = () => {
-    if (downloadUrl) {
-      const a = document.createElement('a')
-      a.href = downloadUrl
+  const downloadRecording = async (format?: ExportFormat) => {
+    if (!downloadUrl) return
+
+    const targetFormat = format || exportFormat
+    
+    try {
+      if (!recordedChunks.length) {
+        // Direct download if no chunks available
+        const formatInfo = videoExporter.getFormatInfo(targetFormat)
+        videoExporter.downloadVideo(
+          await fetch(downloadUrl).then(r => r.blob()),
+          targetFormat,
+          `video-presentation-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.${formatInfo.extension}`
+        )
+        return
+      }
+
+      // Create blob from recorded chunks
+      const originalBlob = new Blob(recordedChunks, { type: recordedMimeType })
       
-      // Determine file extension based on MIME type
-      const fileExtension = recordedMimeType.includes('mp4') ? 'mp4' : 'webm'
-      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
-      a.download = `video-presentation-${timestamp}.${fileExtension}`
-      
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
+      // Check if conversion is needed
+      if (videoExporter.needsConversion(recordedMimeType, targetFormat)) {
+        console.log(`🎬 Converting to ${targetFormat.toUpperCase()}...`)
+        setIsConverting(true)
+        setConversionProgress({ progress: 0, stage: 'Preparing conversion...' })
+
+        // Convert video
+        const convertedBlob = await videoExporter.convertToFormat(
+          originalBlob,
+          targetFormat,
+          (progress: ConversionProgress) => {
+            setConversionProgress(progress)
+          }
+        )
+
+        // Download converted file
+        videoExporter.downloadVideo(convertedBlob, targetFormat)
+        console.log(`✅ ${targetFormat.toUpperCase()} conversion and download complete!`)
+      } else {
+        // Direct download without conversion
+        videoExporter.downloadVideo(originalBlob, targetFormat)
+        console.log(`✅ ${targetFormat.toUpperCase()} download complete!`)
+      }
+    } catch (error) {
+      console.error('❌ Download/conversion failed:', error)
+      alert(`❌ Failed to download ${targetFormat.toUpperCase()}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsConverting(false)
+      setConversionProgress(null)
     }
   }
 
@@ -821,6 +839,10 @@ export default function VideoPresenter() {
           onPictureInPicture={handlePictureInPicture}
           onToggleTeleprompter={handleToggleTeleprompter}
           onToggleCameraPopup={handleToggleCameraPopup}
+          exportFormat={exportFormat}
+          onExportFormatChange={setExportFormat}
+          isConverting={isConverting}
+          conversionProgress={conversionProgress}
         />
       </div>
 
