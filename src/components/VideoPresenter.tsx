@@ -6,6 +6,7 @@ import ControlsPanel from './ControlsPanel'
 import TopBar from './TopBar'
 import Teleprompter from './Teleprompter'
 import { videoExporter, type ExportFormat, type ConversionProgress } from '@/lib/videoConverter'
+import { useTranslation } from '@/lib/useTranslation'
 
 
 export interface PresenterSettings {
@@ -21,6 +22,7 @@ export interface PresenterSettings {
 export type RecordingSource = 'camera' | 'screen' | 'both'
 
 export default function VideoPresenter() {
+  const { t, mounted } = useTranslation()
   const [isRecording, setIsRecording] = useState(false)
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([])
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
@@ -863,7 +865,7 @@ export default function VideoPresenter() {
                 ? 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200' 
                 : 'bg-blue-600 hover:bg-blue-700 text-white border border-blue-500'
             }`}
-            title={isSidebarVisible ? 'Hide sidebar (Tab)' : 'Show sidebar (Tab)'}
+            title={isSidebarVisible ? t.hideSidebar : t.showSidebar}
           >
             <svg 
               className={`w-4 h-4 transition-transform duration-300 ${!isSidebarVisible ? 'rotate-180' : ''}`} 

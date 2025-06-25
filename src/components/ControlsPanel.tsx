@@ -2,6 +2,7 @@
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
 import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo } from 'lucide-react'
+import { useTranslation } from '@/lib/useTranslation'
 import { type ExportFormat, type ConversionProgress, videoExporter } from '@/lib/videoConverter'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -55,10 +56,12 @@ export default function ControlsPanel({
   isConverting,
   conversionProgress
 }: ControlsPanelProps) {
+  const { t, mounted } = useTranslation()
+  
   const backgroundOptions = [
-    { value: 'visible', label: 'Visible', icon: Eye },
-    { value: 'blurred', label: 'Blurred', icon: EyeOff },
-    { value: 'hidden', label: 'Hidden', icon: EyeOff },
+    { value: 'visible', label: t.visible, icon: Eye },
+    { value: 'blurred', label: t.blurred, icon: EyeOff },
+    { value: 'hidden', label: t.hidden, icon: EyeOff },
   ] as const
 
   const shapeOptions = [
@@ -68,12 +71,12 @@ export default function ControlsPanel({
   ] as const
 
   const colorOptions = [
-    { value: '#3b82f6', name: 'Blue' }, // Moved to first position as default
-    { value: '#8b5cf6', name: 'Purple' },
-    { value: '#10b981', name: 'Emerald' },
-    { value: '#f59e0b', name: 'Amber' },
-    { value: '#ef4444', name: 'Red' },
-    { value: '#6b7280', name: 'Gray' },
+    { value: '#3b82f6', name: t.blue }, // Moved to first position as default
+    { value: '#8b5cf6', name: t.purple },
+    { value: '#10b981', name: t.emerald },
+    { value: '#f59e0b', name: t.amber },
+    { value: '#ef4444', name: t.red },
+    { value: '#6b7280', name: t.gray },
   ]
 
 
@@ -87,8 +90,8 @@ export default function ControlsPanel({
   return (
     <div className="w-80 bg-background border-l border-border flex flex-col h-full">
       <div className="flex items-center gap-2 p-6 pb-4 flex-shrink-0">
-        <h2 className="text-xl font-semibold">Presenter</h2>
-        <Badge variant="outline">Beta</Badge>
+        <h2 className="text-xl font-semibold">{mounted ? t.videoPresenter : 'Video Presenter'}</h2>
+        <Badge variant="outline">{mounted ? t.beta : 'Beta'}</Badge>
       </div>
       
       <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">{/* Space for content */}
@@ -96,7 +99,7 @@ export default function ControlsPanel({
       {/* Virtual background - MOVED TO TOP */}
       <Card className="mb-6">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Virtual background</CardTitle>
+          <CardTitle className="text-sm">{mounted ? t.virtualBackground : 'Virtual background'}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* First row - Popular options */}
@@ -106,7 +109,7 @@ export default function ControlsPanel({
               variant={settings.virtualBackground === 'tech' ? "default" : "outline"}
               onClick={() => onSettingsChange({ ...settings, virtualBackground: 'tech' })}
               className="aspect-video p-1 h-auto"
-              title="Tech/Futuristic background"
+              title={mounted ? t.techBackground : 'Tech/Futuristic background'}
             >
               <div className="w-full h-full bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-sm relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12"></div>
@@ -118,7 +121,7 @@ export default function ControlsPanel({
               variant={settings.virtualBackground === 'space' ? "default" : "outline"}
               onClick={() => onSettingsChange({ ...settings, virtualBackground: 'space' })}
               className="aspect-video p-1 h-auto"
-              title="Space background"
+              title={mounted ? t.spaceBackground : 'Space background'}
             >
               <div className="w-full h-full bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 rounded-sm relative overflow-hidden">
                 <div className="absolute top-1 right-1 w-0.5 h-0.5 bg-white rounded-full"></div>
@@ -132,7 +135,7 @@ export default function ControlsPanel({
               variant={settings.virtualBackground === 'ocean' ? "default" : "outline"}
               onClick={() => onSettingsChange({ ...settings, virtualBackground: 'ocean' })}
               className="aspect-video p-1 h-auto"
-              title="Ocean background"
+              title={mounted ? t.oceanBackground : 'Ocean background'}
             >
               <div className="w-full h-full bg-gradient-to-br from-blue-600 via-cyan-500 to-teal-400 rounded-sm"></div>
             </Button>
@@ -141,7 +144,7 @@ export default function ControlsPanel({
           {/* Expandable section for more backgrounds */}
           <details className="group">
             <summary className="cursor-pointer text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
-              <span>More backgrounds</span>
+              <span>{mounted ? t.moreBackgrounds : 'More backgrounds'}</span>
               <svg className="w-3 h-3 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -261,7 +264,7 @@ export default function ControlsPanel({
                   variant={settings.virtualBackground === null ? "default" : "outline"}
                   onClick={() => onSettingsChange({ ...settings, virtualBackground: null })}
                   className="aspect-video p-1 h-auto"
-                  title="No background (Green screen effect)"
+                  title={mounted ? t.noBackground : 'No background (Green screen effect)'}
                 >
                   <div className="w-full h-full bg-gradient-to-br from-green-400 to-green-600 rounded-sm flex items-center justify-center">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -278,39 +281,39 @@ export default function ControlsPanel({
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             <Video className="h-4 w-4" />
-            Recording
+            {mounted ? t.recording : 'Recording'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Recording source selection */}
           {!isRecording && (
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Record:</Label>
+              <Label className="text-xs text-muted-foreground">{mounted ? t.record : 'Record'}:</Label>
               <div className="grid grid-cols-1 gap-2">
-                <Button
-                  variant={recordingSource === 'camera' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onRecordingSourceChange('camera')}
-                  className="justify-start text-xs"
-                >
-                  📹 Camera
-                </Button>
-                <Button
-                  variant={recordingSource === 'screen' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onRecordingSourceChange('screen')}
-                  className="justify-start text-xs"
-                >
-                  🖥️ Screen
-                </Button>
-                <Button
-                  variant={recordingSource === 'both' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onRecordingSourceChange('both')}
-                  className="justify-start text-xs"
-                >
-                  📹🖥️ Both
-                </Button>
+                                  <Button
+                    variant={recordingSource === 'camera' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => onRecordingSourceChange('camera')}
+                    className="justify-start text-xs"
+                  >
+                    📹 {mounted ? t.camera : 'Camera'}
+                  </Button>
+                  <Button
+                    variant={recordingSource === 'screen' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => onRecordingSourceChange('screen')}
+                    className="justify-start text-xs"
+                  >
+                    🖥️ {mounted ? t.screen : 'Screen'}
+                  </Button>
+                  <Button
+                    variant={recordingSource === 'both' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => onRecordingSourceChange('both')}
+                    className="justify-start text-xs"
+                  >
+                    📹🖥️ {mounted ? t.both : 'Both'}
+                  </Button>
               </div>
             </div>
           )}
@@ -318,23 +321,23 @@ export default function ControlsPanel({
           {/* Recording controls */}
           <div className="space-y-2">
             {!isRecording ? (
-              <Button
-                onClick={() => {
-                  console.log('🎬 RECORD BUTTON CLICKED in ControlsPanel')
-                  console.log('📋 Recording source:', recordingSource)
-                  console.log('🔍 Is recording already?', isRecording)
-                  console.log('📞 Calling onStartRecording...')
-                  onStartRecording()
-                  console.log('✅ onStartRecording called')
-                }}
-                variant="destructive"
-                size="sm"
-                className="w-full"
-                disabled={isRecording}
-              >
-                <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
-                Record {recordingSource === 'camera' ? 'Camera' : recordingSource === 'screen' ? 'Screen' : 'Both'}
-              </Button>
+                              <Button
+                  onClick={() => {
+                    console.log('🎬 RECORD BUTTON CLICKED in ControlsPanel')
+                    console.log('📋 Recording source:', recordingSource)
+                    console.log('🔍 Is recording already?', isRecording)
+                    console.log('📞 Calling onStartRecording...')
+                    onStartRecording()
+                    console.log('✅ onStartRecording called')
+                  }}
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  disabled={isRecording}
+                >
+                  <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
+                  {mounted ? t.record : 'Record'} {recordingSource === 'camera' ? (mounted ? t.camera : 'Camera') : recordingSource === 'screen' ? (mounted ? t.screen : 'Screen') : (mounted ? t.both : 'Both')}
+                </Button>
             ) : (
               <div className="space-y-2">
                 <div className="space-y-1">
@@ -342,9 +345,9 @@ export default function ControlsPanel({
                     <div className="flex items-center gap-1">
                       <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                       <span className="text-muted-foreground">
-                        Recording {recordingSource === 'camera' ? '📹 Camera' : 
-                                  recordingSource === 'screen' ? '🖥️ Screen' : 
-                                  '📹🖥️ Both'}
+                        {mounted ? t.recordingActive : 'Recording'} {recordingSource === 'camera' ? `📹 ${mounted ? t.camera : 'Camera'}` : 
+                                  recordingSource === 'screen' ? `🖥️ ${mounted ? t.screen : 'Screen'}` : 
+                                  `📹🖥️ ${mounted ? t.both : 'Both'}`}
                       </span>
                     </div>
                     <span className="font-mono font-semibold text-red-600">{formatDuration(recordingDuration)}</span>
@@ -352,7 +355,7 @@ export default function ControlsPanel({
                   
                   {recordingSource === 'both' && (
                     <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded border border-amber-200 dark:border-amber-800">
-                      💡 Screen + Camera recording active
+                      💡 {mounted ? t.screenCameraRecording : 'Screen + Camera recording active'}
                     </div>
                   )}
                 </div>
@@ -364,7 +367,7 @@ export default function ControlsPanel({
                   className="w-full"
                 >
                   <div className="w-2 h-2 bg-white mr-2"></div>
-                  Stop Recording
+                  {mounted ? t.stopRecording : 'Stop Recording'}
                 </Button>
               </div>
             )}
@@ -374,7 +377,7 @@ export default function ControlsPanel({
                 {/* Video Preview */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">Preview</Label>
+                    <Label className="text-xs text-muted-foreground">{mounted ? t.preview : 'Preview'}</Label>
                     <div className="text-xs text-muted-foreground">
                       {formatDuration(recordingDuration)} • {recordedMimeType?.includes('mp4') ? 'MP4' : 'WebM'}
                     </div>
@@ -399,7 +402,7 @@ export default function ControlsPanel({
 
                 {/* Export Format Selection */}
                 <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Export Format:</Label>
+                  <Label className="text-xs text-muted-foreground">{mounted ? t.exportFormat : 'Export Format:'}</Label>
                   <div className="grid grid-cols-2 gap-1">
                     {(['webm', 'mp4'] as ExportFormat[]).map((format) => {
                       const formatInfo = videoExporter.getFormatInfo(format)
@@ -431,7 +434,7 @@ export default function ControlsPanel({
                     className="text-xs"
                   >
                     <Download className="h-3 w-3 mr-1" />
-                    Download {videoExporter.getFormatInfo(exportFormat).name}
+                    {mounted ? t.download : 'Download'} {videoExporter.getFormatInfo(exportFormat).name}
                   </Button>
                   {onClearRecording && (
                     <Button
@@ -440,8 +443,8 @@ export default function ControlsPanel({
                       size="sm"
                       className="text-xs"
                     >
-                      <Video className="h-3 w-3 mr-1" />
-                      Record Again
+                                              <Video className="h-3 w-3 mr-1" />
+                        {mounted ? t.recordAgain : 'Record Again'}
                     </Button>
                   )}
                 </div>
@@ -453,7 +456,7 @@ export default function ControlsPanel({
               <div className="space-y-3">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">Converting to {videoExporter.getFormatInfo(exportFormat).name}</Label>
+                    <Label className="text-xs text-muted-foreground">{mounted ? t.converting : 'Converting to'} {videoExporter.getFormatInfo(exportFormat).name}</Label>
                     <div className="text-xs text-muted-foreground">{Math.round(conversionProgress.progress)}%</div>
                   </div>
                   
@@ -471,7 +474,7 @@ export default function ControlsPanel({
                 
                 <div className="flex items-center justify-center text-xs text-muted-foreground">
                   <FileVideo className="h-4 w-4 mr-2 animate-pulse" />
-                  This may take a few moments...
+                  {mounted ? t.conversionProgress : 'This may take a few moments...'}
                 </div>
               </div>
             )}
@@ -480,7 +483,7 @@ export default function ControlsPanel({
           {/* Picture-in-Picture */}
           <Separator />
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Stay Visible</Label>
+            <Label className="text-xs text-muted-foreground">{mounted ? t.stayVisible : 'Stay Visible'}</Label>
             <Button
               onClick={onPictureInPicture}
               variant="outline"
@@ -492,7 +495,7 @@ export default function ControlsPanel({
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                 <rect x="8" y="8" width="8" height="6" rx="1" ry="1"/>
               </svg>
-              Picture-in-Picture
+              {mounted ? t.pictureInPicture : 'Picture-in-Picture'}
             </Button>
           </div>
         </CardContent>
@@ -501,7 +504,7 @@ export default function ControlsPanel({
       {/* Real background */}
       <Card className="mb-6">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Real background</CardTitle>
+          <CardTitle className="text-sm">{mounted ? t.realBackground : 'Real background'}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-3 gap-2">
@@ -524,7 +527,7 @@ export default function ControlsPanel({
       {/* Shape */}
       <Card className="mb-6">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Shape</CardTitle>
+          <CardTitle className="text-sm">{mounted ? t.shape : 'Shape'}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
@@ -546,7 +549,7 @@ export default function ControlsPanel({
       {/* Color */}
       <Card className="mb-6">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Color</CardTitle>
+          <CardTitle className="text-sm">{mounted ? t.color : 'Color'}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2 flex-wrap">
@@ -579,7 +582,7 @@ export default function ControlsPanel({
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             <Maximize2 className="h-4 w-4" />
-            Video Size
+            {mounted ? t.videoSize : 'Video Size'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -592,13 +595,13 @@ export default function ControlsPanel({
                 onClick={() => onSettingsChange({ ...settings, size })}
                 className="text-xs capitalize"
               >
-                {size === 'xlarge' ? 'X-Large' : size}
+{mounted ? (size === 'xlarge' ? t.xlarge : t[size]) : (size === 'xlarge' ? 'X-Large' : size)}
               </Button>
             ))}
           </div>
           
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Size: {settings.size}</Label>
+            <Label className="text-xs text-muted-foreground">{mounted ? t.size : 'Size'}: {settings.size}</Label>
             <Slider
               value={[
                 settings.size === 'small' ? 25 :
@@ -620,7 +623,7 @@ export default function ControlsPanel({
           </div>
           
           <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Position</Label>
+            <Label className="text-xs text-muted-foreground">{mounted ? t.position : 'Position'}</Label>
             <Button
               variant="outline"
               size="sm"
@@ -631,7 +634,7 @@ export default function ControlsPanel({
               className="text-xs"
             >
               <RotateCcw className="h-3 w-3 mr-1" />
-              Reset
+              {mounted ? t.reset : 'Reset'}
             </Button>
           </div>
         </CardContent>
@@ -640,7 +643,7 @@ export default function ControlsPanel({
       {/* Additional settings */}
       <Card className="mb-6">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Additional settings</CardTitle>
+          <CardTitle className="text-sm">{mounted ? t.additionalSettings : 'Additional settings'}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <Button 
@@ -650,7 +653,7 @@ export default function ControlsPanel({
             onClick={onToggleTeleprompter}
           >
             <Type className="mr-2 h-4 w-4" />
-            Teleprompter
+            {mounted ? t.teleprompter : 'Teleprompter'}
           </Button>
           <Button 
             variant="ghost" 
@@ -659,12 +662,12 @@ export default function ControlsPanel({
             onClick={onToggleCameraPopup}
           >
             <Camera className="mr-2 h-4 w-4" />
-            Camera Popup
+            {mounted ? t.cameraPopup : 'Camera Popup'}
           </Button>
 
           <Button variant="ghost" size="sm" className="text-sm w-full justify-start">
             <Settings className="mr-2 h-4 w-4" />
-            Advanced options
+            {mounted ? t.advancedOptions : 'Advanced options'}
           </Button>
         </CardContent>
       </Card>
