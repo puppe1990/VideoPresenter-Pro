@@ -545,7 +545,7 @@ export default function ControlsPanel({
                   
                   switch (settings.shape) {
                     case 'circle':
-                      return { ...baseStyle, borderRadius: '50%', aspectRatio: '1/1' }
+                      return { ...baseStyle, borderRadius: '50%', width: '48px', height: '48px', aspectRatio: '1/1' }
                     case 'rounded':
                       return { ...baseStyle, borderRadius: '12px' }
                     case 'hexagon':

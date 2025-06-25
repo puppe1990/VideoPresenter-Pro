@@ -742,23 +742,23 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }, [videoRef, settings])
 
   const getShapeClass = () => {
-    const baseClasses = 'object-cover transition-all duration-500'
+    const baseClasses = 'transition-all duration-500 shadow-lg'
     
     switch (settings.shape) {
       case 'circle':
-        return `${baseClasses} rounded-full aspect-square shadow-lg`
+        return `${baseClasses}` // No rounded-full here, handled in style
       case 'rounded':
-        return `${baseClasses} rounded-3xl shadow-lg`
+        return `${baseClasses} rounded-3xl object-cover`
       case 'hexagon':
-        return `${baseClasses} shadow-lg`
+        return `${baseClasses} object-cover`
       case 'diamond':
-        return `${baseClasses} shadow-lg`
+        return `${baseClasses} object-cover`
       case 'heart':
-        return `${baseClasses} shadow-lg`
+        return `${baseClasses} object-cover`
       case 'star':
-        return `${baseClasses} shadow-lg`
+        return `${baseClasses} object-cover`
       default:
-        return `${baseClasses} rounded-lg shadow-lg`
+        return `${baseClasses} rounded-lg object-cover`
     }
   }
 
@@ -776,6 +776,22 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     }
 
     switch (settings.shape) {
+      case 'circle':
+        // Force perfect circle by making width = height and using object-fit
+        const circleSize = customVideoSize ? 
+          Math.min(customVideoSize.width, customVideoSize.height) : 
+          (settings.size === 'small' ? 200 : 
+           settings.size === 'medium' ? 300 : 
+           settings.size === 'large' ? 400 : 500)
+        return {
+          ...baseStyle,
+          width: `${circleSize}px`,
+          height: `${circleSize}px`,
+          borderRadius: '50%',
+          objectFit: 'cover' as const,
+          minWidth: `${circleSize}px`,
+          minHeight: `${circleSize}px`
+        }
       case 'hexagon':
         return {
           ...baseStyle,
@@ -806,17 +822,22 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }
 
   const getSizeClass = () => {
+    // For circles, we'll handle sizing in the style function to ensure perfect circles
+    if (settings.shape === 'circle') {
+      return '' // No size classes for circles, handled in getShapeStyle
+    }
+    
     switch (settings.size) {
       case 'small':
-        return settings.shape === 'circle' ? 'w-40 h-40' : 'max-w-sm max-h-80'
+        return 'max-w-sm max-h-80'
       case 'medium':
-        return settings.shape === 'circle' ? 'w-60 h-60' : 'max-w-2xl max-h-96'
+        return 'max-w-2xl max-h-96'
       case 'large':
-        return settings.shape === 'circle' ? 'w-80 h-80' : 'max-w-4xl max-h-[500px]'
+        return 'max-w-4xl max-h-[500px]'
       case 'xlarge':
-        return settings.shape === 'circle' ? 'w-96 h-96' : 'max-w-6xl max-h-[600px]'
+        return 'max-w-6xl max-h-[600px]'
       default:
-        return settings.shape === 'circle' ? 'w-60 h-60' : 'max-w-2xl max-h-96'
+        return 'max-w-2xl max-h-96'
     }
   }
 
