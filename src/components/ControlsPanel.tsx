@@ -282,16 +282,6 @@ export default function ControlsPanel({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Debug Info */}
-          <div className="text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded border">
-            <div className="font-mono">
-              <div>🎥 Recording: {isRecording ? '✅ YES' : '❌ NO'}</div>
-              <div>📹 Source: {recordingSource}</div>
-              <div>⏱️ Duration: {recordingDuration}s</div>
-              <div>💾 Download: {downloadUrl ? '✅ Ready' : '❌ None'}</div>
-            </div>
-          </div>
-          
           {/* Recording source selection */}
           {!isRecording && (
             <div className="space-y-2">
