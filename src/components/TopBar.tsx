@@ -1,33 +1,48 @@
 'use client'
 
-import { Menu, Settings, Users, HelpCircle } from 'lucide-react'
+import { Settings, Users, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useTranslation } from '@/lib/useTranslation'
 import LanguageSwitcher from './LanguageSwitcher'
 
+// Logo Component
+const VideoPresenterLogo = () => (
+  <svg width="300" height="72" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 120">
+    {/* Icon: screen with play triangle */}
+    <g transform="translate(20, 30)">
+      <rect x="0" y="0" width="60" height="60" rx="12" fill="#00BFA6"/>
+      <polygon points="22,18 42,30 22,42" fill="white"/>
+    </g>
+
+    {/* Wordmark */}
+    <text x="100" y="60"
+          fontFamily="Segoe UI, sans-serif"
+          fontSize="36"
+          fontWeight="700"
+          fill="#222">
+      VideoPresenter
+    </text>
+
+    {/* Sub-label: Pro badge */}
+    <rect x="365" y="35" rx="5" ry="5" width="60" height="28" fill="#00BFA6"/>
+    <text x="395" y="55" textAnchor="middle"
+          fontFamily="Segoe UI, sans-serif"
+          fontSize="16"
+          fontWeight="600"
+          fill="white">
+      PRO
+    </text>
+  </svg>
+)
+
 export default function TopBar() {
-  const { t, language, mounted } = useTranslation()
+  const { t, mounted } = useTranslation()
   
   return (
     <div className="flex items-center justify-between p-4 bg-background border-b border-border">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon">
-          <Menu className="h-5 w-5" />
-        </Button>
-        
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold text-foreground">
-            {mounted ? t.videoPresenter : 'Video Presenter'}
-          </h1>
-          <Badge variant="secondary" className="px-2 py-1 text-xs">
-            {mounted ? t.beta : 'Beta'}
-          </Badge>
-          <Badge variant="outline" className="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900">
-            {language === 'en' ? '🇺🇸 EN' : '🇧🇷 PT'}
-          </Badge>
-        </div>
+      <div className="flex items-center">
+        <VideoPresenterLogo />
       </div>
 
       <div className="flex items-center gap-2">
