@@ -149,13 +149,19 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
           itemType = 'document'
         }
         
+        // Calculate board dimensions based on zoom level
+        const container = containerRef.current
+        const boardWidth = container ? (zoomLevel < 1 ? container.clientWidth / zoomLevel : container.clientWidth) : 800
+        const boardHeight = container ? (zoomLevel < 1 ? container.clientHeight / zoomLevel : container.clientHeight) : 600
+        
         const newItem: BoardItem = {
           id: `item-${Date.now()}-${Math.random()}`,
           type: itemType,
           src: fileUrl,
           fileName: file.name,
-          x: Math.random() * 300 + 100, // Random position
-          y: Math.random() * 200 + 100,
+          // Position items randomly across the available board space
+          x: Math.random() * (boardWidth * 0.7) + boardWidth * 0.15, // Use 70% of available width, 15% margin
+          y: Math.random() * (boardHeight * 0.7) + boardHeight * 0.15, // Use 70% of available height, 15% margin
           width: itemType === 'image' ? 200 : itemType === 'video' ? 300 : 250,
           height: itemType === 'image' ? 150 : itemType === 'video' ? 200 : 180,
           rotation: 0,
@@ -172,7 +178,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     } finally {
       setProcessingFile(false)
     }
-  }, [boardItems])
+  }, [boardItems, zoomLevel])
 
   // Drag and drop event handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -461,7 +467,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }, [])
 
   const handleZoomOut = useCallback(() => {
-    setZoomLevel(prev => Math.max(prev - 0.2, 0.2)) // Min zoom 0.2x
+    setZoomLevel(prev => Math.max(prev - 0.2, 0.1)) // Min zoom 0.1x
   }, [])
 
   const handleZoomReset = useCallback(() => {
@@ -473,12 +479,12 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault()
       const zoomFactor = e.deltaY > 0 ? -0.1 : 0.1
-      setZoomLevel(prev => Math.max(0.2, Math.min(3, prev + zoomFactor)))
+      setZoomLevel(prev => Math.max(0.1, Math.min(3, prev + zoomFactor)))
     }
   }, [])
 
   const handlePanStart = useCallback((e: React.MouseEvent) => {
-    if (zoomLevel > 1 && e.ctrlKey) {
+    if ((zoomLevel !== 1) && e.ctrlKey) {
       e.preventDefault()
       setIsPanning(true)
       setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y })
@@ -487,12 +493,39 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
 
   const handlePanMove = useCallback((e: MouseEvent) => {
     if (isPanning) {
-      setPanOffset({
-        x: e.clientX - panStart.x,
-        y: e.clientY - panStart.y
-      })
+      const newX = e.clientX - panStart.x
+      const newY = e.clientY - panStart.y
+      
+      // Add some constraints to prevent panning too far off-screen
+      const container = containerRef.current
+      if (container) {
+        const containerWidth = container.clientWidth
+        const containerHeight = container.clientHeight
+        
+        // Calculate generous pan limits based on zoom level for full board access
+        let maxPanX, maxPanY
+        
+        if (zoomLevel < 1) {
+          // When zoomed out, allow panning across the entire expanded board area
+          const expandedWidth = containerWidth / zoomLevel
+          const expandedHeight = containerHeight / zoomLevel
+          maxPanX = (expandedWidth - containerWidth) * 0.6 // Allow 60% of the expanded area
+          maxPanY = (expandedHeight - containerHeight) * 0.6
+        } else {
+          // When zoomed in, use more restrictive limits
+          maxPanX = containerWidth * (zoomLevel - 1) * 0.6
+          maxPanY = containerHeight * (zoomLevel - 1) * 0.6
+        }
+        
+        setPanOffset({
+          x: Math.max(-maxPanX, Math.min(maxPanX, newX)),
+          y: Math.max(-maxPanY, Math.min(maxPanY, newY))
+        })
+      } else {
+        setPanOffset({ x: newX, y: newY })
+      }
     }
-  }, [isPanning, panStart])
+  }, [isPanning, panStart, zoomLevel])
 
   const handlePanEnd = useCallback(() => {
     setIsPanning(false)
@@ -695,7 +728,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   return (
     <div 
       ref={containerRef}
-      className="w-full h-full relative p-8 overflow-hidden"
+      className={`w-full h-full relative p-8 ${zoomLevel < 1 ? 'overflow-visible' : 'overflow-hidden'}`}
       style={getBackgroundStyle()}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -720,7 +753,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
             variant="outline"
             className="h-8 w-8 p-0"
             onClick={handleZoomOut}
-            disabled={zoomLevel <= 0.2}
+            disabled={zoomLevel <= 0.1}
             title="Zoom Out (Ctrl + - or Ctrl + Mouse Wheel Down)"
           >
             <ZoomOut className="h-4 w-4" />
@@ -741,7 +774,12 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
             {Math.round(zoomLevel * 100)}%
           </div>
         )}
-        {zoomLevel > 1 && (
+        {zoomLevel < 0.5 && (
+          <div className="bg-background/90 backdrop-blur-sm rounded-lg border px-2 py-1 text-xs text-center">
+            Board: {Math.round(100/zoomLevel)}x larger
+          </div>
+        )}
+        {zoomLevel !== 1 && (
           <div className="bg-background/90 backdrop-blur-sm rounded-lg border px-2 py-1 text-xs text-center">
             Ctrl+Click to pan
           </div>
@@ -750,20 +788,61 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
 
       {/* Zoom Content Wrapper */}
       <div
-        className="w-full h-full origin-center transition-transform duration-200 ease-out"
+        className="origin-center transition-transform duration-200 ease-out"
         style={{
+          // Expand the content area when zoomed out to show more board space
+          width: zoomLevel < 1 ? `${100 / zoomLevel}%` : '100%',
+          height: zoomLevel < 1 ? `${100 / zoomLevel}%` : '100%',
+          // Center the expanded area when zoomed out
+          position: 'absolute',
+          top: zoomLevel < 1 ? `${-(100 / zoomLevel - 100) / 2}%` : '0',
+          left: zoomLevel < 1 ? `${-(100 / zoomLevel - 100) / 2}%` : '0',
           transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
-          cursor: zoomLevel > 1 && isPanning ? 'grabbing' : zoomLevel > 1 ? 'grab' : 'default'
+          cursor: zoomLevel !== 1 && isPanning ? 'grabbing' : zoomLevel !== 1 ? 'grab' : 'default'
         }}
       >
-        {/* Subtle overlay pattern for texture */}
+        {/* Subtle overlay pattern for texture - scales with zoom */}
         <div 
           className="absolute inset-0 opacity-5"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            backgroundSize: '60px 60px'
+            backgroundSize: `${60 * zoomLevel}px ${60 * zoomLevel}px`
           }}
         />
+
+        {/* Board area indicator when zoomed out */}
+        {zoomLevel < 0.5 && (
+          <div 
+            className="absolute inset-0 border-2 border-dashed border-primary/20"
+            style={{
+              // Show original board boundaries as a reference
+              width: `${100 * zoomLevel}%`,
+              height: `${100 * zoomLevel}%`,
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none'
+            }}
+          >
+            <div className="absolute top-2 left-2 bg-primary/10 backdrop-blur-sm rounded px-2 py-1 text-xs text-primary">
+              Original Board Area
+            </div>
+          </div>
+        )}
+
+        {/* Grid overlay for better spatial awareness when zoomed out */}
+        {zoomLevel < 0.3 && (
+          <div 
+            className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{
+              backgroundImage: `
+                linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: `${200 * zoomLevel}px ${200 * zoomLevel}px`
+            }}
+          />
+        )}
 
       {/* Full board drag overlay */}
       {isDragOver && (
@@ -1029,8 +1108,21 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         }}
       />
 
-      {/* File drop area */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+      {/* File drop area - positioned based on zoom level */}
+      <div 
+        className="absolute"
+        style={{
+          // When zoomed out, position in the center of the visible area
+          // When at normal zoom, keep at bottom
+          bottom: zoomLevel < 0.5 ? 'auto' : '32px',
+          top: zoomLevel < 0.5 ? '50%' : 'auto',
+          left: '50%',
+          transform: zoomLevel < 0.5 
+            ? `translate(-50%, -50%) translate(${-panOffset.x / zoomLevel}px, ${-panOffset.y / zoomLevel}px)`
+            : 'translateX(-50%)',
+          zIndex: 30
+        }}
+      >
         <Card 
           className="bg-background/80 backdrop-blur-sm border-dashed transition-all duration-200 border-border hover:border-primary/50"
         >
@@ -1054,7 +1146,10 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Upload className="h-4 w-4 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Drag files anywhere on the board
+                    {zoomLevel < 0.2 
+                      ? `Huge board space available! (${Math.round(100/zoomLevel)}x larger)`
+                      : "Drag files anywhere on the board"
+                    }
                   </p>
                 </div>
                 
