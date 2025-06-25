@@ -13,7 +13,6 @@ export interface PresenterSettings {
   shape: 'rectangle' | 'circle' | 'rounded'
   color: string
   virtualBackground: string | null
-  showPointer: boolean
   size: 'small' | 'medium' | 'large' | 'xlarge'
   position: { x: number; y: number }
   isDragging: boolean
@@ -39,7 +38,6 @@ export default function VideoPresenter() {
     shape: 'rectangle',
     color: '#3b82f6', // Beautiful blue instead of green
     virtualBackground: 'tech', // Set tech background as default
-    showPointer: true,
     size: 'medium',
     position: { x: 16, y: 16 },
     isDragging: false,

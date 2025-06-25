@@ -1,7 +1,7 @@
 'use client'
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
-import { Eye, EyeOff, Square, Circle, CornerUpRight, MousePointer, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo } from 'lucide-react'
+import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo } from 'lucide-react'
 import { type ExportFormat, type ConversionProgress, videoExporter } from '@/lib/videoConverter'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -671,29 +671,7 @@ export default function ControlsPanel({
 
 
 
-      <Separator className="my-6" />
 
-      {/* Pointer */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Pointer</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MousePointer className="h-4 w-4" />
-              <Label htmlFor="show-pointer" className="text-sm">Show logo</Label>
-            </div>
-            <Switch
-              id="show-pointer"
-              checked={settings.showPointer}
-              onCheckedChange={(checked) => 
-                onSettingsChange({ ...settings, showPointer: checked })
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
       </div>
     </div>
   )
