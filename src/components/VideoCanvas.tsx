@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import DocumentViewer from './DocumentViewer'
@@ -24,8 +23,6 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [isDragOver, setIsDragOver] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
-  const [processingFile, setProcessingFile] = useState(false)
   const [boardItems, setBoardItems] = useState<BoardItem[]>([])
   const [selectedItem, setSelectedItem] = useState<string | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -144,13 +141,11 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
-    setProcessingFile(true)
     const fileArray = Array.from(files)
     const validFiles = fileArray.filter(isValidFileType)
     
     if (validFiles.length === 0) {
       alert('Please upload valid files: .png, .jpg, .gif, .mp4, .pdf, .pptx, .key')
-      setProcessingFile(false)
       return
     }
 
@@ -197,13 +192,9 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         
         setBoardItems(prev => [...prev, newItem])
       }
-      
-      setUploadedFiles(prev => [...prev, ...validFiles])
     } catch (error) {
       console.error('Error processing files:', error)
       alert('Error processing files. Please try again.')
-    } finally {
-      setProcessingFile(false)
     }
   }, [boardItems, zoomLevel])
 
@@ -1296,97 +1287,15 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         }}
       />
 
-      {/* File drop area - positioned based on zoom level */}
-      <div 
-        className="absolute"
-        style={{
-          // When zoomed out, position in the center of the visible area
-          // When at normal zoom, keep at bottom
-          bottom: zoomLevel < 0.5 ? 'auto' : '32px',
-          top: zoomLevel < 0.5 ? '50%' : 'auto',
-          left: '50%',
-          transform: zoomLevel < 0.5 
-            ? `translate(-50%, -50%) translate(${-panOffset.x / zoomLevel}px, ${-panOffset.y / zoomLevel}px)`
-            : 'translateX(-50%)',
-          zIndex: 30
-        }}
-      >
-        <Card 
-          className="bg-background/80 backdrop-blur-sm border-dashed transition-all duration-200 border-border hover:border-primary/50"
-        >
-          <div className="px-6 py-4 text-center">
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept=".png,.jpg,.jpeg,.gif,.mp4,.pdf,.pptx,.key"
-              onChange={handleFileInputChange}
-              className="hidden"
-            />
-            
-            {processingFile ? (
-              <div className="flex items-center justify-center gap-2">
-                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                <span className="text-sm text-muted-foreground">Processing files...</span>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Upload className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    {zoomLevel < 0.2 
-                      ? `Huge board space available! (${Math.round(100/zoomLevel)}x larger)`
-                      : "Drag files anywhere on the board"
-                    }
-                  </p>
-                </div>
-                
-                <div className="flex items-center justify-center gap-1 mb-3">
-                  <FileImage className="h-3 w-3 text-muted-foreground" />
-                  <FileVideo className="h-3 w-3 text-muted-foreground" />
-                  <FileText className="h-3 w-3 text-muted-foreground" />
-                </div>
-                
-                <p className="text-xs text-muted-foreground mb-3">
-                  (.png, .jpg, .gif, .mp4, .pdf, .pptx, .key)
-                </p>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-xs"
-                >
-                  Choose Files
-                </Button>
-              </>
-            )}
-            
-            {uploadedFiles.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-border/50">
-                <p className="text-xs text-muted-foreground mb-1">
-                  {uploadedFiles.length} file(s) uploaded
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {uploadedFiles.slice(-3).map((file, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {file.name.length > 15 
-                        ? `${file.name.substring(0, 15)}...` 
-                        : file.name
-                      }
-                    </Badge>
-                  ))}
-                  {uploadedFiles.length > 3 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{uploadedFiles.length - 3} more
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </Card>
-      </div>
+      {/* Hidden file input for drag and drop functionality */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept=".png,.jpg,.jpeg,.gif,.mp4,.pdf,.pptx,.key"
+        onChange={handleFileInputChange}
+        className="hidden"
+      />
       </div>
     </div>
   )

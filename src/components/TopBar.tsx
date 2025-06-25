@@ -1,8 +1,9 @@
 'use client'
 
-import { Settings, Users, HelpCircle } from 'lucide-react'
+import { Settings, Users, HelpCircle, FileImage, FileVideo, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTranslation } from '@/lib/useTranslation'
 import LanguageSwitcher from './LanguageSwitcher'
 
@@ -40,26 +41,65 @@ export default function TopBar() {
   const { t, mounted } = useTranslation()
   
   return (
-    <div className="flex items-center justify-between p-4 bg-background border-b border-border">
-      <div className="flex items-center">
-        <VideoPresenterLogo />
-      </div>
+    <TooltipProvider>
+      <div className="flex items-center justify-between p-4 bg-background border-b border-border">
+        <div className="flex items-center">
+          <VideoPresenterLogo />
+        </div>
 
-      <div className="flex items-center gap-2">
-        <LanguageSwitcher />
-        
-        <Separator orientation="vertical" className="h-6" />
-        
-        <Button variant="ghost" size="icon" title="Users">
-          <Users className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="icon" title="Help">
-          <HelpCircle className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="icon" title={mounted ? t.settings : 'Settings'}>
-          <Settings className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          
+          <Separator orientation="vertical" className="h-6" />
+          
+          <Button variant="ghost" size="icon" title="Users">
+            <Users className="h-4 w-4" />
+          </Button>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="end" className="max-w-sm">
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">File Upload Support</h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Drag and drop files anywhere on the board to add them to your presentation.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <FileImage className="h-3 w-3 text-blue-500" />
+                    <span className="text-xs">Images: .png, .jpg, .jpeg, .gif</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FileVideo className="h-3 w-3 text-green-500" />
+                    <span className="text-xs">Videos: .mp4</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-3 w-3 text-orange-500" />
+                    <span className="text-xs">Documents: .pdf, .pptx, .key</span>
+                  </div>
+                </div>
+                
+                <div className="pt-2 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    💡 Tip: Files can be resized, moved, and rotated on the board
+                  </p>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Button variant="ghost" size="icon" title={mounted ? t.settings : 'Settings'}>
+            <Settings className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 } 
