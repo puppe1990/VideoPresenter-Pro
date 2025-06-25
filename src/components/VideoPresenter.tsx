@@ -45,6 +45,7 @@ export default function VideoPresenter() {
     isDragging: false,
   })
   const [isPictureInPicture, setIsPictureInPicture] = useState(false)
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -664,6 +665,10 @@ export default function VideoPresenter() {
     }
   }
 
+  const handleToggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible)
+  }
+
   const openCameraPopup = () => {
     const popup = window.open(
       '',
@@ -821,6 +826,20 @@ export default function VideoPresenter() {
     }
   }, [isRecording])
 
+  // Keyboard shortcut for toggling sidebar
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Toggle sidebar with Tab key (but not when focused on input elements)
+      if (event.key === 'Tab' && event.target instanceof Element && !event.target.matches('input, textarea, select')) {
+        event.preventDefault()
+        handleToggleSidebar()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [])
+
 
 
   return (
@@ -837,32 +856,59 @@ export default function VideoPresenter() {
             isRecording={isRecording}
             isPictureInPicture={isPictureInPicture}
           />
+          
+          {/* Sidebar toggle button - positioned near sidebar edge */}
+          <button
+            onClick={handleToggleSidebar}
+            className={`fixed top-20 right-4 z-50 p-3 rounded-lg shadow-xl transition-all duration-300 ${
+              isSidebarVisible 
+                ? 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200' 
+                : 'bg-blue-600 hover:bg-blue-700 text-white border border-blue-500'
+            }`}
+            title={isSidebarVisible ? 'Hide sidebar (Tab)' : 'Show sidebar (Tab)'}
+          >
+            <svg 
+              className={`w-4 h-4 transition-transform duration-300 ${!isSidebarVisible ? 'rotate-180' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={3} 
+                d="M9 5l7 7-7 7" 
+              />
+            </svg>
+          </button>
         </div>
 
-        {/* Controls panel */}
-        <div className="flex-shrink-0">
-          <ControlsPanel
-            settings={settings}
-            onSettingsChange={setSettings}
-            isRecording={isRecording}
-            recordingSource={recordingSource}
-            onRecordingSourceChange={setRecordingSource}
-            onStartRecording={handleStartRecording}
-            onStopRecording={handleStopRecording}
-            recordingDuration={recordingDuration}
-            downloadUrl={downloadUrl}
-            onDownloadRecording={downloadRecording}
-            onClearRecording={clearRecording}
-            recordedMimeType={recordedMimeType}
-            onPictureInPicture={handlePictureInPicture}
-            onToggleTeleprompter={handleToggleTeleprompter}
-            onToggleCameraPopup={handleToggleCameraPopup}
-            exportFormat={exportFormat}
-            onExportFormatChange={setExportFormat}
-            isConverting={isConverting}
-            conversionProgress={conversionProgress}
-          />
-        </div>
+        {/* Controls panel - conditionally shown */}
+        {isSidebarVisible && (
+          <div className="flex-shrink-0 animate-in slide-in-from-right duration-200">
+            <ControlsPanel
+              settings={settings}
+              onSettingsChange={setSettings}
+              isRecording={isRecording}
+              recordingSource={recordingSource}
+              onRecordingSourceChange={setRecordingSource}
+              onStartRecording={handleStartRecording}
+              onStopRecording={handleStopRecording}
+              recordingDuration={recordingDuration}
+              downloadUrl={downloadUrl}
+              onDownloadRecording={downloadRecording}
+              onClearRecording={clearRecording}
+              recordedMimeType={recordedMimeType}
+              onPictureInPicture={handlePictureInPicture}
+              onToggleTeleprompter={handleToggleTeleprompter}
+              onToggleCameraPopup={handleToggleCameraPopup}
+              exportFormat={exportFormat}
+              onExportFormatChange={setExportFormat}
+              isConverting={isConverting}
+              conversionProgress={conversionProgress}
+            />
+          </div>
+        )}
       </div>
 
       {/* Teleprompter - positioned outside the recording area */}
