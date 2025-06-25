@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import VideoCanvas from './VideoCanvas'
 import ControlsPanel from './ControlsPanel'
 import TopBar from './TopBar'
@@ -22,7 +22,7 @@ export interface PresenterSettings {
 export type RecordingSource = 'camera' | 'screen' | 'both'
 
 export default function VideoPresenter() {
-  const { t, mounted } = useTranslation()
+  const { t } = useTranslation()
   const [isRecording, setIsRecording] = useState(false)
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([])
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
@@ -665,9 +665,9 @@ export default function VideoPresenter() {
     }
   }
 
-  const handleToggleSidebar = () => {
+  const handleToggleSidebar = useCallback(() => {
     setIsSidebarVisible(!isSidebarVisible)
-  }
+  }, [isSidebarVisible])
 
   const openCameraPopup = () => {
     const popup = window.open(
@@ -838,7 +838,7 @@ export default function VideoPresenter() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [])
+  }, [handleToggleSidebar])
 
 
 

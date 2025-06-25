@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import Image from 'next/image'
 import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -1163,10 +1164,11 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
           >
             {/* Item Content */}
             {item.type === 'image' ? (
-              <img
-                src={item.src}
+              <Image
+                src={item.src || ''}
                 alt="Board item"
-                className="w-full h-full object-cover rounded-lg shadow-lg"
+                fill
+                className="object-cover rounded-lg shadow-lg"
                 draggable={false}
                 loading="lazy"
               />
