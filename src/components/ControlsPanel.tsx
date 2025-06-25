@@ -85,11 +85,13 @@ export default function ControlsPanel({
   }
 
   return (
-    <div className="w-80 bg-background border-l border-border p-6 overflow-y-auto">
-      <div className="flex items-center gap-2 mb-6">
+    <div className="w-80 bg-background border-l border-border flex flex-col h-full">
+      <div className="flex items-center gap-2 p-6 pb-4 flex-shrink-0">
         <h2 className="text-xl font-semibold">Presenter</h2>
         <Badge variant="outline">Beta</Badge>
       </div>
+      
+      <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">{/* Space for content */}
 
       {/* Recording Controls */}
       <Card className="mb-6">
@@ -575,6 +577,7 @@ export default function ControlsPanel({
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 } 

@@ -812,12 +812,12 @@ export default function VideoPresenter() {
 
 
   return (
-    <div className="h-screen flex flex-col bg-gray-900">
+    <div className="h-full flex flex-col bg-gray-900 overflow-hidden">
       <TopBar />
       
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0">
         {/* Main video area */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-hidden">
           <VideoCanvas
             videoRef={videoRef}
             settings={settings}
@@ -827,27 +827,29 @@ export default function VideoPresenter() {
         </div>
 
         {/* Controls panel */}
-        <ControlsPanel
-          settings={settings}
-          onSettingsChange={setSettings}
-          isRecording={isRecording}
-          recordingSource={recordingSource}
-          onRecordingSourceChange={setRecordingSource}
-          onStartRecording={handleStartRecording}
-          onStopRecording={handleStopRecording}
-          recordingDuration={recordingDuration}
-          downloadUrl={downloadUrl}
-          onDownloadRecording={downloadRecording}
-          onClearRecording={clearRecording}
-          recordedMimeType={recordedMimeType}
-          onPictureInPicture={handlePictureInPicture}
-          onToggleTeleprompter={handleToggleTeleprompter}
-          onToggleCameraPopup={handleToggleCameraPopup}
-          exportFormat={exportFormat}
-          onExportFormatChange={setExportFormat}
-          isConverting={isConverting}
-          conversionProgress={conversionProgress}
-        />
+        <div className="flex-shrink-0">
+          <ControlsPanel
+            settings={settings}
+            onSettingsChange={setSettings}
+            isRecording={isRecording}
+            recordingSource={recordingSource}
+            onRecordingSourceChange={setRecordingSource}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            recordingDuration={recordingDuration}
+            downloadUrl={downloadUrl}
+            onDownloadRecording={downloadRecording}
+            onClearRecording={clearRecording}
+            recordedMimeType={recordedMimeType}
+            onPictureInPicture={handlePictureInPicture}
+            onToggleTeleprompter={handleToggleTeleprompter}
+            onToggleCameraPopup={handleToggleCameraPopup}
+            exportFormat={exportFormat}
+            onExportFormatChange={setExportFormat}
+            isConverting={isConverting}
+            conversionProgress={conversionProgress}
+          />
+        </div>
       </div>
 
       {/* Teleprompter - positioned outside the recording area */}
