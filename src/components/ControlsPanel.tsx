@@ -1,7 +1,7 @@
 'use client'
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
-import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo } from 'lucide-react'
+import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, Hexagon, Diamond, Heart, Star } from 'lucide-react'
 import { useTranslation } from '@/lib/useTranslation'
 import { type ExportFormat, type ConversionProgress, videoExporter } from '@/lib/videoConverter'
 import { Button } from '@/components/ui/button'
@@ -64,9 +64,13 @@ export default function ControlsPanel({
   ] as const
 
   const shapeOptions = [
-    { value: 'rectangle', icon: Square },
-    { value: 'circle', icon: Circle },
-    { value: 'rounded', icon: CornerUpRight },
+    { value: 'rectangle', icon: Square, label: 'Rectangle' },
+    { value: 'circle', icon: Circle, label: 'Circle' },
+    { value: 'rounded', icon: CornerUpRight, label: 'Rounded' },
+    { value: 'hexagon', icon: Hexagon, label: 'Hexagon' },
+    { value: 'diamond', icon: Diamond, label: 'Diamond' },
+    { value: 'heart', icon: Heart, label: 'Heart' },
+    { value: 'star', icon: Star, label: 'Star' },
   ] as const
 
   const colorOptions = [
@@ -528,19 +532,99 @@ export default function ControlsPanel({
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">{mounted ? t.shape : 'Shape'}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            {shapeOptions.map(({ value, icon: Icon }) => (
+        <CardContent className="space-y-3">
+          {/* Current Shape Preview */}
+          <div className="flex items-center justify-center p-4 bg-muted/30 rounded-lg">
+            <div className="relative">
+              <div 
+                className="w-16 h-12 bg-gradient-to-br from-blue-500 to-purple-600 transition-all duration-500"
+                style={(() => {
+                  const baseStyle = {
+                    border: `2px solid ${settings.color}`,
+                  }
+                  
+                  switch (settings.shape) {
+                    case 'circle':
+                      return { ...baseStyle, borderRadius: '50%', aspectRatio: '1/1' }
+                    case 'rounded':
+                      return { ...baseStyle, borderRadius: '12px' }
+                    case 'hexagon':
+                      return { ...baseStyle, clipPath: 'polygon(50% 0%, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%)', borderRadius: '0' }
+                    case 'diamond':
+                      return { ...baseStyle, clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)', borderRadius: '0' }
+                    case 'heart':
+                      return { ...baseStyle, clipPath: 'polygon(50% 20%, 20% 0%, 0% 30%, 0% 60%, 50% 100%, 100% 60%, 100% 30%, 80% 0%)', borderRadius: '0' }
+                    case 'star':
+                      return { ...baseStyle, clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)', borderRadius: '0' }
+                    default:
+                      return { ...baseStyle, borderRadius: '8px' }
+                  }
+                })()}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-4 gap-2">
+            {shapeOptions.slice(0, 4).map(({ value, icon: Icon, label }) => (
               <Button
                 key={value}
                 variant={settings.shape === value ? "default" : "outline"}
-                size="icon"
                 onClick={() => onSettingsChange({ ...settings, shape: value })}
-                className="h-10 w-10"
+                className={`h-16 flex flex-col gap-1 transition-all duration-200 ${
+                  settings.shape === value ? 'ring-2 ring-primary ring-offset-2 scale-105' : 'hover:scale-102'
+                }`}
+                title={label}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-5 w-5" />
+                <span className="text-xs">{label}</span>
               </Button>
             ))}
+          </div>
+          
+          {/* Creative Shapes */}
+          <details className="group">
+            <summary className="cursor-pointer text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+              <span>Creative Shapes</span>
+              <svg className="w-3 h-3 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="mt-2">
+                             <div className="grid grid-cols-3 gap-2">
+                 {shapeOptions.slice(4).map(({ value, icon: Icon, label }) => (
+                   <Button
+                     key={value}
+                     variant={settings.shape === value ? "default" : "outline"}
+                     onClick={() => onSettingsChange({ ...settings, shape: value })}
+                     className={`h-16 flex flex-col gap-1 transition-all duration-200 ${
+                       settings.shape === value ? 'ring-2 ring-primary ring-offset-2 scale-105' : 'hover:scale-102'
+                     }`}
+                     title={label}
+                   >
+                     <Icon className="h-5 w-5" />
+                     <span className="text-xs">{label}</span>
+                   </Button>
+                 ))}
+               </div>
+            </div>
+          </details>
+          
+          <div className="text-xs text-center text-muted-foreground p-2 bg-accent/20 rounded">
+            <span className="font-medium">Current Shape:</span>{' '}
+            <span className="font-semibold capitalize text-primary">{settings.shape}</span>
+            {settings.shape !== 'rectangle' && (
+              <div className="text-xs mt-1 text-muted-foreground">
+                ✨ {settings.shape === 'circle' ? 'Perfect for portraits' : 
+                     settings.shape === 'rounded' ? 'Professional & modern' :
+                     settings.shape === 'hexagon' ? 'Geometric & unique' :
+                     settings.shape === 'diamond' ? 'Bold & distinctive' :
+                     settings.shape === 'heart' ? 'Creative & playful' :
+                     settings.shape === 'star' ? 'Eye-catching & fun' : 'Classic & versatile'}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

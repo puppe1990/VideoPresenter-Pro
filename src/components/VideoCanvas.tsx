@@ -742,13 +742,66 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }, [videoRef, settings])
 
   const getShapeClass = () => {
+    const baseClasses = 'object-cover transition-all duration-500'
+    
     switch (settings.shape) {
       case 'circle':
-        return 'rounded-full aspect-square object-cover'
+        return `${baseClasses} rounded-full aspect-square shadow-lg`
       case 'rounded':
-        return 'rounded-xl'
+        return `${baseClasses} rounded-3xl shadow-lg`
+      case 'hexagon':
+        return `${baseClasses} shadow-lg`
+      case 'diamond':
+        return `${baseClasses} shadow-lg`
+      case 'heart':
+        return `${baseClasses} shadow-lg`
+      case 'star':
+        return `${baseClasses} shadow-lg`
       default:
-        return 'rounded-lg'
+        return `${baseClasses} rounded-lg shadow-lg`
+    }
+  }
+
+  const getShapeStyle = () => {
+    const baseStyle = {
+      border: `4px solid ${settings.color}`,
+      filter: settings.backgroundType === 'blurred' ? 'blur(10px)' : 'none',
+      minHeight: '200px',
+      minWidth: '300px',
+      ...(customVideoSize && {
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover' as const
+      })
+    }
+
+    switch (settings.shape) {
+      case 'hexagon':
+        return {
+          ...baseStyle,
+          clipPath: 'polygon(50% 0%, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%)',
+          borderRadius: '0'
+        }
+      case 'diamond':
+        return {
+          ...baseStyle,
+          clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+          borderRadius: '0'
+        }
+      case 'heart':
+        return {
+          ...baseStyle,
+          clipPath: 'polygon(50% 20%, 20% 0%, 0% 30%, 0% 60%, 50% 100%, 100% 60%, 100% 30%, 80% 0%)',
+          borderRadius: '0'
+        }
+      case 'star':
+        return {
+          ...baseStyle,
+          clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+          borderRadius: '0'
+        }
+      default:
+        return baseStyle
     }
   }
 
@@ -1007,7 +1060,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
 
             {/* Camera loading placeholder */}
             <div className={`${customVideoSize ? 'w-full h-full' : getSizeClass()} ${getShapeClass()} bg-gray-800 flex items-center justify-center text-white text-sm absolute inset-0 z-0`}
-                 style={{ border: `4px solid ${settings.color}` }}>
+                 style={getShapeStyle()}>
               <div className="text-center">
                 <div className="animate-pulse mb-2">📹</div>
                 <div>Camera Loading...</div>
@@ -1023,26 +1076,14 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               className={`${customVideoSize ? '' : getSizeClass()} ${getShapeClass()} transition-all duration-300 ease-in-out ${
                 settings.isDragging ? 'pointer-events-none' : ''
               } bg-gray-800 relative z-10`}
-              style={{
-                border: `4px solid ${settings.color}`,
-                filter: settings.backgroundType === 'blurred' ? 'blur(10px)' : 'none',
-                minHeight: '200px',
-                minWidth: '300px',
-                ...(customVideoSize && {
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                })
-              }}
+              style={getShapeStyle()}
             />
             
             {/* Canvas for advanced effects (currently hidden while we debug) */}
             <canvas
               ref={canvasRef}
               className="hidden"
-              style={{
-                border: `4px solid ${settings.color}`,
-              }}
+              style={getShapeStyle()}
             />
             
             {/* Video Resize Handles */}
