@@ -44,6 +44,7 @@ export default function VideoPresenter() {
     position: { x: 16, y: 16 },
     isDragging: false,
   })
+  const [isPictureInPicture, setIsPictureInPicture] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -99,6 +100,17 @@ export default function VideoPresenter() {
           videoRef.current.onloadedmetadata = () => {
             console.log('🎥 Video metadata loaded - ready for recording')
           }
+
+          // Add Picture-in-Picture event listeners
+          videoRef.current.addEventListener('enterpictureinpicture', () => {
+            console.log('📺 Entered Picture-in-Picture mode')
+            setIsPictureInPicture(true)
+          })
+
+          videoRef.current.addEventListener('leavepictureinpicture', () => {
+            console.log('📺 Left Picture-in-Picture mode')
+            setIsPictureInPicture(false)
+          })
         }
       } catch (err) {
         console.error('❌ Error accessing camera:', err)
@@ -823,6 +835,7 @@ export default function VideoPresenter() {
             settings={settings}
             onSettingsChange={setSettings}
             isRecording={isRecording}
+            isPictureInPicture={isPictureInPicture}
           />
         </div>
 

@@ -13,9 +13,10 @@ interface VideoCanvasProps {
   settings: PresenterSettings
   onSettingsChange: (settings: PresenterSettings) => void
   isRecording: boolean
+  isPictureInPicture: boolean
 }
 
-export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording }: VideoCanvasProps) {
+export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture }: VideoCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
@@ -956,6 +957,9 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
           transform: settings.position.x === 0 && settings.position.y === 0 
             ? 'translate(-50%, -50%)' 
             : 'none',
+          // Make invisible but keep functional for PiP
+          opacity: settings.backgroundType === 'hidden' || isPictureInPicture ? 0 : 1,
+          pointerEvents: settings.backgroundType === 'hidden' || isPictureInPicture ? 'none' : 'auto',
           ...(customVideoSize && {
             width: `${customVideoSize.width}px`,
             height: `${customVideoSize.height}px`
@@ -1001,7 +1005,6 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               style={{
                 border: `4px solid ${settings.color}`,
                 filter: settings.backgroundType === 'blurred' ? 'blur(10px)' : 'none',
-                display: settings.backgroundType === 'hidden' ? 'none' : 'block',
                 minHeight: '200px',
                 minWidth: '300px',
                 ...(customVideoSize && {
@@ -1049,6 +1052,19 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
                 <Badge variant="destructive" className="flex items-center gap-2 px-3 py-1">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                   REC
+                </Badge>
+              </div>
+            )}
+
+            {/* Picture-in-Picture indicator */}
+            {isPictureInPicture && (
+              <div className="absolute top-4 right-4">
+                <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1 bg-blue-500/80 text-white">
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                    <rect x="8" y="8" width="8" height="6" rx="1" ry="1"/>
+                  </svg>
+                  PiP Active
                 </Badge>
               </div>
             )}
