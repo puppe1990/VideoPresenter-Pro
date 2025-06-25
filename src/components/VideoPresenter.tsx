@@ -122,7 +122,7 @@ export default function VideoPresenter() {
     }
   }, []) // Remove dependencies to prevent re-initialization
 
-  // Separate cleanup effect for unmount
+  // Cleanup effect for unmount only
   useEffect(() => {
     return () => {
       console.log('🧹 Component unmounting - full cleanup')
@@ -135,9 +135,13 @@ export default function VideoPresenter() {
       }
       
       // Cleanup recording resources
-      if (mediaRecorderRef.current && isRecording) {
+      if (mediaRecorderRef.current) {
         console.log('🛑 Stopping recording due to unmount')
-        mediaRecorderRef.current.stop()
+        try {
+          mediaRecorderRef.current.stop()
+        } catch (e) {
+          console.log('Recording already stopped')
+        }
       }
       
       if (recordingTimerRef.current) {
@@ -153,7 +157,7 @@ export default function VideoPresenter() {
         URL.revokeObjectURL(downloadUrl)
       }
     }
-  }, [isRecording, screenStream, downloadUrl])
+  }, []) // Remove dependencies - only run on unmount
 
   const getScreenStream = async () => {
     try {
