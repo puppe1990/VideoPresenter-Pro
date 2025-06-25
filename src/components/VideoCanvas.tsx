@@ -5,7 +5,7 @@ import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Move, Upload, FileImage, FileVideo, FileText, X, Copy } from 'lucide-react'
+import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import DocumentViewer from './DocumentViewer'
 
 interface VideoCanvasProps {
@@ -36,6 +36,11 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [videoResizeHandle, setVideoResizeHandle] = useState<string | null>(null)
   const [customVideoSize, setCustomVideoSize] = useState<{ width: number; height: number } | null>(null)
+  // Zoom functionality
+  const [zoomLevel, setZoomLevel] = useState(1)
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
+  const [isPanning, setIsPanning] = useState(false)
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
 
   interface BoardItem {
     id: string
@@ -450,6 +455,49 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     document.addEventListener('mouseup', handleMouseUp)
   }, [settings, onSettingsChange])
 
+  // Zoom functionality
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(prev + 0.2, 3)) // Max zoom 3x
+  }, [])
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(prev - 0.2, 0.2)) // Min zoom 0.2x
+  }, [])
+
+  const handleZoomReset = useCallback(() => {
+    setZoomLevel(1)
+    setPanOffset({ x: 0, y: 0 })
+  }, [])
+
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault()
+      const zoomFactor = e.deltaY > 0 ? -0.1 : 0.1
+      setZoomLevel(prev => Math.max(0.2, Math.min(3, prev + zoomFactor)))
+    }
+  }, [])
+
+  const handlePanStart = useCallback((e: React.MouseEvent) => {
+    if (zoomLevel > 1 && e.ctrlKey) {
+      e.preventDefault()
+      setIsPanning(true)
+      setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y })
+    }
+  }, [zoomLevel, panOffset])
+
+  const handlePanMove = useCallback((e: MouseEvent) => {
+    if (isPanning) {
+      setPanOffset({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      })
+    }
+  }, [isPanning, panStart])
+
+  const handlePanEnd = useCallback(() => {
+    setIsPanning(false)
+  }, [])
+
   // Add global mouse event listeners for dragging
   useEffect(() => {
     if (settings.isDragging) {
@@ -462,6 +510,59 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       }
     }
   }, [settings.isDragging, handleMouseMove, handleMouseUp])
+
+  // Pan event listeners
+  useEffect(() => {
+    if (isPanning) {
+      document.addEventListener('mousemove', handlePanMove)
+      document.addEventListener('mouseup', handlePanEnd)
+      
+      return () => {
+        document.removeEventListener('mousemove', handlePanMove)
+        document.removeEventListener('mouseup', handlePanEnd)
+      }
+    }
+  }, [isPanning, handlePanMove, handlePanEnd])
+
+  // Wheel zoom event listener
+  useEffect(() => {
+    const container = containerRef.current
+    if (container) {
+      container.addEventListener('wheel', handleWheel, { passive: false })
+      
+      return () => {
+        container.removeEventListener('wheel', handleWheel)
+      }
+    }
+  }, [handleWheel])
+
+  // Keyboard shortcuts for zoom
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case '=':
+          case '+':
+            e.preventDefault()
+            handleZoomIn()
+            break
+          case '-':
+            e.preventDefault()
+            handleZoomOut()
+            break
+          case '0':
+            e.preventDefault()
+            handleZoomReset()
+            break
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleZoomIn, handleZoomOut, handleZoomReset])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -599,15 +700,70 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onMouseDown={handlePanStart}
     >
-      {/* Subtle overlay pattern for texture */}
-      <div 
-        className="absolute inset-0 opacity-5"
+      {/* Zoom Controls */}
+      <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
+        <div className="bg-background/90 backdrop-blur-sm rounded-lg border p-1 flex flex-col gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={handleZoomIn}
+            disabled={zoomLevel >= 3}
+            title="Zoom In (Ctrl + = or Ctrl + Mouse Wheel Up)"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={handleZoomOut}
+            disabled={zoomLevel <= 0.2}
+            title="Zoom Out (Ctrl + - or Ctrl + Mouse Wheel Down)"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={handleZoomReset}
+            disabled={zoomLevel === 1 && panOffset.x === 0 && panOffset.y === 0}
+            title="Reset Zoom & Pan (Ctrl + 0)"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
+        {zoomLevel !== 1 && (
+          <div className="bg-background/90 backdrop-blur-sm rounded-lg border px-2 py-1 text-xs text-center">
+            {Math.round(zoomLevel * 100)}%
+          </div>
+        )}
+        {zoomLevel > 1 && (
+          <div className="bg-background/90 backdrop-blur-sm rounded-lg border px-2 py-1 text-xs text-center">
+            Ctrl+Click to pan
+          </div>
+        )}
+      </div>
+
+      {/* Zoom Content Wrapper */}
+      <div
+        className="w-full h-full origin-center transition-transform duration-200 ease-out"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          backgroundSize: '60px 60px'
+          transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
+          cursor: zoomLevel > 1 && isPanning ? 'grabbing' : zoomLevel > 1 ? 'grab' : 'default'
         }}
-      />
+      >
+        {/* Subtle overlay pattern for texture */}
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px'
+          }}
+        />
 
       {/* Full board drag overlay */}
       {isDragOver && (
@@ -947,6 +1103,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
             )}
           </div>
         </Card>
+      </div>
       </div>
     </div>
   )
