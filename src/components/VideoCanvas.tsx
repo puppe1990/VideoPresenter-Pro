@@ -836,6 +836,11 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
             Board: {Math.round(100/zoomLevel)}x larger
           </div>
         )}
+        {zoomLevel < 0.5 && (
+          <div className="bg-background/90 backdrop-blur-sm rounded-lg border px-2 py-1 text-xs text-center text-muted-foreground">
+            Objects have larger click areas
+          </div>
+        )}
         {zoomLevel !== 1 && (
           <div className="bg-background/90 backdrop-blur-sm rounded-lg border px-2 py-1 text-xs text-center">
             Ctrl+Click to pan
@@ -1052,109 +1057,188 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       </div>
 
       {/* Board Items */}
-      {boardItems.map((item) => (
-        <div
-          key={item.id}
-          className={`absolute cursor-move select-none ${
-            selectedItem === item.id ? 'ring-2 ring-primary' : ''
-          }`}
-          style={{
-            left: `${item.x}px`,
-            top: `${item.y}px`,
-            width: `${item.width}px`,
-            height: `${item.height}px`,
-            zIndex: item.zIndex,
-            transform: `rotate(${item.rotation}deg)`,
-          }}
-          onMouseDown={(e) => handleItemMouseDown(e, item.id)}
-          onClick={() => {
-            setSelectedItem(item.id)
-            setIsVideoSelected(false) // Deselect video when selecting board item
-          }}
-        >
-          {/* Item Content */}
-          {item.type === 'image' ? (
-            <img
-              src={item.src}
-              alt="Board item"
-              className="w-full h-full object-cover rounded-lg shadow-lg"
-              draggable={false}
-              loading="lazy"
+      {boardItems.map((item) => {
+        // Calculate enhanced interaction sizes when zoomed out
+        const padding = zoomLevel < 0.5 ? 20 / zoomLevel : 5
+        const borderWidth = zoomLevel < 0.5 ? 4 / zoomLevel : 2
+        const handleSize = zoomLevel < 0.5 ? 16 / zoomLevel : 8
+        
+        return (
+          <div
+            key={item.id}
+            className={`absolute cursor-move select-none transition-all duration-200 ${
+              selectedItem === item.id ? 'shadow-xl' : ''
+            } ${zoomLevel < 0.5 ? 'hover:shadow-lg' : ''}`}
+            style={{
+              left: `${item.x - padding}px`,
+              top: `${item.y - padding}px`,
+              width: `${item.width + padding * 2}px`,
+              height: `${item.height + padding * 2}px`,
+              zIndex: item.zIndex,
+              transform: `rotate(${item.rotation}deg)`,
+              padding: `${padding}px`,
+            }}
+            onMouseDown={(e) => handleItemMouseDown(e, item.id)}
+            onClick={() => {
+              setSelectedItem(item.id)
+              setIsVideoSelected(false) // Deselect video when selecting board item
+            }}
+          >
+          {/* Enhanced visual outline when zoomed out */}
+          {zoomLevel < 0.5 && (
+            <div
+              className="absolute inset-0 border-2 border-primary/30 rounded-lg pointer-events-none"
+              style={{
+                borderWidth: `${borderWidth}px`,
+              }}
             />
-          ) : item.type === 'video' ? (
-            <video
-              src={item.src}
-              className="w-full h-full object-cover rounded-lg shadow-lg"
-              controls
-              muted
-            />
-          ) : item.type === 'document' ? (
-            <DocumentViewer
-              src={item.src || ''}
-              fileName={item.fileName || 'Document'}
-              type={
-                item.fileName?.toLowerCase().endsWith('.pdf') ? 'pdf' :
-                item.fileName?.toLowerCase().endsWith('.pptx') ? 'ppt' :
-                item.fileName?.toLowerCase().endsWith('.key') ? 'key' : 'pdf'
-              }
-              className="w-full h-full"
-            />
-          ) : (
-            <div className="w-full h-full bg-white rounded-lg shadow-lg p-4 text-black">
-              {item.content || 'Text content'}
-            </div>
           )}
 
-          {/* Selection Controls */}
+          {/* Selection outline */}
+          {selectedItem === item.id && (
+            <div
+              className="absolute inset-0 border-primary rounded-lg pointer-events-none"
+              style={{
+                boxShadow: `0 0 0 ${borderWidth}px rgb(var(--primary))`,
+              }}
+            />
+          )}
+
+          {/* Item Content Container */}
+          <div 
+            className="w-full h-full"
+            style={{
+              margin: `-${padding}px`,
+              width: `${item.width}px`,
+              height: `${item.height}px`,
+              position: 'relative',
+              top: `${padding}px`,
+              left: `${padding}px`,
+            }}
+          >
+            {/* Item Content */}
+            {item.type === 'image' ? (
+              <img
+                src={item.src}
+                alt="Board item"
+                className="w-full h-full object-cover rounded-lg shadow-lg"
+                draggable={false}
+                loading="lazy"
+              />
+            ) : item.type === 'video' ? (
+              <video
+                src={item.src}
+                className="w-full h-full object-cover rounded-lg shadow-lg"
+                controls
+                muted
+              />
+            ) : item.type === 'document' ? (
+              <DocumentViewer
+                src={item.src || ''}
+                fileName={item.fileName || 'Document'}
+                type={
+                  item.fileName?.toLowerCase().endsWith('.pdf') ? 'pdf' :
+                  item.fileName?.toLowerCase().endsWith('.pptx') ? 'ppt' :
+                  item.fileName?.toLowerCase().endsWith('.key') ? 'key' : 'pdf'
+                }
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="w-full h-full bg-white rounded-lg shadow-lg p-4 text-black">
+                {item.content || 'Text content'}
+              </div>
+            )}
+          </div>
+
+          {/* Selection Controls - Enhanced for zoom out */}
           {selectedItem === item.id && (
             <>
-              {/* Resize Handles */}
+              {/* Resize Handles - Larger when zoomed out */}
               <div
-                className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-nw-resize"
+                className="absolute bg-primary rounded-full cursor-nw-resize"
+                style={{
+                  width: `${handleSize}px`,
+                  height: `${handleSize}px`,
+                  top: `-${handleSize / 2}px`,
+                  left: `-${handleSize / 2}px`,
+                }}
                 onMouseDown={(e) => handleResizeMouseDown(e, item.id, 'nw')}
               />
               <div
-                className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-ne-resize"
+                className="absolute bg-primary rounded-full cursor-ne-resize"
+                style={{
+                  width: `${handleSize}px`,
+                  height: `${handleSize}px`,
+                  top: `-${handleSize / 2}px`,
+                  right: `-${handleSize / 2}px`,
+                }}
                 onMouseDown={(e) => handleResizeMouseDown(e, item.id, 'ne')}
               />
               <div
-                className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-sw-resize"
+                className="absolute bg-primary rounded-full cursor-sw-resize"
+                style={{
+                  width: `${handleSize}px`,
+                  height: `${handleSize}px`,
+                  bottom: `-${handleSize / 2}px`,
+                  left: `-${handleSize / 2}px`,
+                }}
                 onMouseDown={(e) => handleResizeMouseDown(e, item.id, 'sw')}
               />
               <div
-                className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-se-resize"
+                className="absolute bg-primary rounded-full cursor-se-resize"
+                style={{
+                  width: `${handleSize}px`,
+                  height: `${handleSize}px`,
+                  bottom: `-${handleSize / 2}px`,
+                  right: `-${handleSize / 2}px`,
+                }}
                 onMouseDown={(e) => handleResizeMouseDown(e, item.id, 'se')}
               />
 
-              {/* Action Buttons */}
-              <div className="absolute -top-10 left-0 flex gap-1">
+              {/* Action Buttons - Enhanced size for zoom out */}
+              <div 
+                className="absolute flex gap-1"
+                style={{
+                  top: `-${handleSize * 3}px`,
+                  left: '0',
+                }}
+              >
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="h-6 w-6 p-0"
+                  className="p-0"
+                  style={{
+                    width: `${Math.max(24, handleSize * 1.5)}px`,
+                    height: `${Math.max(24, handleSize * 1.5)}px`,
+                  }}
                   onClick={(e) => {
                     e.stopPropagation()
                     duplicateItem(item.id)
                   }}
                 >
-                  <Copy className="h-3 w-3" />
+                  <Copy className={`${zoomLevel < 0.5 ? 'w-4 h-4' : 'w-3 h-3'}`} />
                 </Button>
                 <Button
                   size="sm"
                   variant="destructive"
-                  className="h-6 w-6 p-0"
+                  className="p-0"
+                  style={{
+                    width: `${Math.max(24, handleSize * 1.5)}px`,
+                    height: `${Math.max(24, handleSize * 1.5)}px`,
+                  }}
                   onClick={(e) => {
                     e.stopPropagation()
                     deleteItem(item.id)
                   }}
                 >
-                  <X className="h-3 w-3" />
+                  <X className={`${zoomLevel < 0.5 ? 'w-4 h-4' : 'w-3 h-3'}`} />
                 </Button>
               </div>
             </>
           )}
-        </div>
-      ))}
+          </div>
+        )
+      })}
 
       {/* Click outside to deselect */}
       <div
