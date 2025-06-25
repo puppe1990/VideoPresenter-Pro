@@ -76,18 +76,43 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     const newX = e.clientX - containerRect.left - dragOffset.x
     const newY = e.clientY - containerRect.top - dragOffset.y
     
-    // Clamp position to container bounds
-    const maxX = containerRect.width - (videoContainerRef.current?.offsetWidth || 0)
-    const maxY = containerRect.height - (videoContainerRef.current?.offsetHeight || 0)
+    // Calculate board bounds based on zoom level
+    let maxX, maxY, minX, minY
     
-    const clampedX = Math.max(0, Math.min(newX, maxX))
-    const clampedY = Math.max(0, Math.min(newY, maxY))
+    if (zoomLevel < 1) {
+      // When zoomed out, allow camera to move across the entire expanded board space
+      const expandedWidth = containerRect.width / zoomLevel
+      const expandedHeight = containerRect.height / zoomLevel
+      const videoWidth = videoContainerRef.current?.offsetWidth || 0
+      const videoHeight = videoContainerRef.current?.offsetHeight || 0
+      
+      // Calculate the expanded board boundaries
+      const boardOffsetX = -(expandedWidth - containerRect.width) / 2
+      const boardOffsetY = -(expandedHeight - containerRect.height) / 2
+      
+      minX = boardOffsetX
+      minY = boardOffsetY
+      maxX = boardOffsetX + expandedWidth - videoWidth
+      maxY = boardOffsetY + expandedHeight - videoHeight
+    } else {
+      // When zoomed in or at normal zoom, use original container bounds
+      const videoWidth = videoContainerRef.current?.offsetWidth || 0
+      const videoHeight = videoContainerRef.current?.offsetHeight || 0
+      
+      minX = 0
+      minY = 0
+      maxX = containerRect.width - videoWidth
+      maxY = containerRect.height - videoHeight
+    }
+    
+    const clampedX = Math.max(minX, Math.min(newX, maxX))
+    const clampedY = Math.max(minY, Math.min(newY, maxY))
     
     onSettingsChange({
       ...settings,
       position: { x: clampedX, y: clampedY }
     })
-  }, [settings, onSettingsChange, dragOffset])
+  }, [settings, onSettingsChange, dragOffset, zoomLevel])
 
   const handleMouseUp = useCallback(() => {
     if (settings.isDragging) {
@@ -242,9 +267,38 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         const newX = e.clientX - rect.left - startX
         const newY = e.clientY - rect.top - startY
         
+        // Calculate board bounds based on zoom level for board items too
+        let minX, minY, maxX, maxY
+        
+        if (zoomLevel < 1) {
+          // When zoomed out, allow items to move across the entire expanded board space
+          const expandedWidth = rect.width / zoomLevel
+          const expandedHeight = rect.height / zoomLevel
+          const itemWidth = item.width
+          const itemHeight = item.height
+          
+          // Calculate the expanded board boundaries
+          const boardOffsetX = -(expandedWidth - rect.width) / 2
+          const boardOffsetY = -(expandedHeight - rect.height) / 2
+          
+          minX = boardOffsetX
+          minY = boardOffsetY
+          maxX = boardOffsetX + expandedWidth - itemWidth
+          maxY = boardOffsetY + expandedHeight - itemHeight
+        } else {
+          // When zoomed in or at normal zoom, use more relaxed bounds
+          minX = -item.width * 0.5 // Allow items to go slightly off-screen
+          minY = -item.height * 0.5
+          maxX = rect.width + item.width * 0.5
+          maxY = rect.height + item.height * 0.5
+        }
+        
+        const clampedX = Math.max(minX, Math.min(newX, maxX))
+        const clampedY = Math.max(minY, Math.min(newY, maxY))
+        
         setBoardItems(prev => prev.map(prevItem => 
           prevItem.id === itemId 
-            ? { ...prevItem, x: Math.max(0, newX), y: Math.max(0, newY) }
+            ? { ...prevItem, x: clampedX, y: clampedY }
             : prevItem
         ))
       }
@@ -257,7 +311,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
     }
-  }, [boardItems])
+  }, [boardItems, zoomLevel])
 
   const handleResizeMouseDown = useCallback((e: React.MouseEvent, itemId: string, handle: string) => {
     e.preventDefault()
@@ -329,24 +383,27 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     document.addEventListener('mouseup', handleMouseUp)
   }, [boardItems])
 
-  const deleteItem = (itemId: string) => {
+  const deleteItem = useCallback((itemId: string) => {
     setBoardItems(prev => prev.filter(item => item.id !== itemId))
     setSelectedItem(null)
-  }
+  }, [])
 
-  const duplicateItem = (itemId: string) => {
+  const duplicateItem = useCallback((itemId: string) => {
     const item = boardItems.find(item => item.id === itemId)
     if (item) {
+      // Calculate offset based on zoom level
+      const offset = zoomLevel < 1 ? 50 / zoomLevel : 20 // Larger offset when zoomed out
+      
       const newItem: BoardItem = {
         ...item,
         id: `item-${Date.now()}-${Math.random()}`,
-        x: item.x + 20,
-        y: item.y + 20,
+        x: item.x + offset,
+        y: item.y + offset,
         zIndex: Math.max(...boardItems.map(i => i.zIndex)) + 1
       }
       setBoardItems(prev => [...prev, newItem])
     }
-  }
+  }, [boardItems, zoomLevel])
 
 
 
