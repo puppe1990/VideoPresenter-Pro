@@ -5,7 +5,7 @@ import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, Presentation } from 'lucide-react'
+import { Move, Upload, FileImage, FileVideo, FileText, X, Copy } from 'lucide-react'
 import DocumentViewer from './DocumentViewer'
 
 interface VideoCanvasProps {
@@ -787,6 +787,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               alt="Board item"
               className="w-full h-full object-cover rounded-lg shadow-lg"
               draggable={false}
+              loading="lazy"
             />
           ) : item.type === 'video' ? (
             <video

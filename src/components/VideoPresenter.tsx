@@ -23,7 +23,6 @@ export type RecordingSource = 'camera' | 'screen' | 'both'
 
 export default function VideoPresenter() {
   const [isRecording, setIsRecording] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([])
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [recordingDuration, setRecordingDuration] = useState(0)
@@ -154,7 +153,7 @@ export default function VideoPresenter() {
         URL.revokeObjectURL(downloadUrl)
       }
     }
-  }, [])
+  }, [isRecording, screenStream, downloadUrl])
 
   const getScreenStream = async () => {
     try {
@@ -793,7 +792,7 @@ export default function VideoPresenter() {
         popupVideo.srcObject = streamRef.current
       }
     }
-  }, [streamRef.current])
+  }, [])
 
   // Update recording indicator in popup
   useEffect(() => {
