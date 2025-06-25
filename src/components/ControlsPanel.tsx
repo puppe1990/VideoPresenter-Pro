@@ -68,9 +68,9 @@ export default function ControlsPanel({
   ] as const
 
   const colorOptions = [
-    { value: '#10b981', name: 'Emerald' },
-    { value: '#3b82f6', name: 'Blue' },
+    { value: '#3b82f6', name: 'Blue' }, // Moved to first position as default
     { value: '#8b5cf6', name: 'Purple' },
+    { value: '#10b981', name: 'Emerald' },
     { value: '#f59e0b', name: 'Amber' },
     { value: '#ef4444', name: 'Red' },
     { value: '#6b7280', name: 'Gray' },
@@ -92,6 +92,186 @@ export default function ControlsPanel({
       </div>
       
       <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">{/* Space for content */}
+
+      {/* Virtual background - MOVED TO TOP */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Virtual background</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* First row - Popular options */}
+          <div className="grid grid-cols-3 gap-2">
+            {/* Tech background - default */}
+            <Button
+              variant={settings.virtualBackground === 'tech' ? "default" : "outline"}
+              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'tech' })}
+              className="aspect-video p-1 h-auto"
+              title="Tech/Futuristic background"
+            >
+              <div className="w-full h-full bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-sm relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12"></div>
+              </div>
+            </Button>
+            
+            {/* Space background */}
+            <Button
+              variant={settings.virtualBackground === 'space' ? "default" : "outline"}
+              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'space' })}
+              className="aspect-video p-1 h-auto"
+              title="Space background"
+            >
+              <div className="w-full h-full bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 rounded-sm relative overflow-hidden">
+                <div className="absolute top-1 right-1 w-0.5 h-0.5 bg-white rounded-full"></div>
+                <div className="absolute bottom-1 left-1 w-0.5 h-0.5 bg-white rounded-full"></div>
+                <div className="absolute top-1/2 left-1/2 w-0.5 h-0.5 bg-white rounded-full"></div>
+              </div>
+            </Button>
+            
+            {/* Ocean background */}
+            <Button
+              variant={settings.virtualBackground === 'ocean' ? "default" : "outline"}
+              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'ocean' })}
+              className="aspect-video p-1 h-auto"
+              title="Ocean background"
+            >
+              <div className="w-full h-full bg-gradient-to-br from-blue-600 via-cyan-500 to-teal-400 rounded-sm"></div>
+            </Button>
+          </div>
+
+          {/* Expandable section for more backgrounds */}
+          <details className="group">
+            <summary className="cursor-pointer text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+              <span>More backgrounds</span>
+              <svg className="w-3 h-3 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="mt-2 space-y-2">
+              {/* Professional backgrounds */}
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant={settings.virtualBackground === 'dark-pro' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'dark-pro' })}
+                  className="aspect-video p-1 h-auto"
+                  title="Dark professional background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-gray-900 via-slate-800 to-zinc-900 rounded-sm"></div>
+                </Button>
+                
+                <Button
+                  variant={settings.virtualBackground === 'modern-office' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'modern-office' })}
+                  className="aspect-video p-1 h-auto"
+                  title="Modern office background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-slate-100 via-gray-200 to-zinc-300 rounded-sm"></div>
+                </Button>
+                
+                <Button
+                  variant={settings.virtualBackground === 'library' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'library' })}
+                  className="aspect-video p-1 h-auto"
+                  title="Library background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-amber-900 via-yellow-800 to-orange-700 rounded-sm"></div>
+                </Button>
+              </div>
+
+              {/* Nature & Creative */}
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant={settings.virtualBackground === 'forest' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'forest' })}
+                  className="aspect-video p-1 h-auto"
+                  title="Forest background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-green-800 via-green-600 to-emerald-500 rounded-sm"></div>
+                </Button>
+                
+                <Button
+                  variant={settings.virtualBackground === 'sunset' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'sunset' })}
+                  className="aspect-video p-1 h-auto"
+                  title="Sunset background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-orange-500 via-pink-500 to-purple-600 rounded-sm"></div>
+                </Button>
+                
+                <Button
+                  variant={settings.virtualBackground === 'waves' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'waves' })}
+                  className="aspect-video p-1 h-auto"
+                  title="Abstract waves background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-600 rounded-sm"></div>
+                </Button>
+              </div>
+
+              {/* More options */}
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant={settings.virtualBackground === 'office' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'office' })}
+                  className="aspect-video p-1 h-auto"
+                  title="Warm office background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-amber-100 to-orange-200 rounded-sm"></div>
+                </Button>
+                
+                <Button
+                  variant={settings.virtualBackground === 'city' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'city' })}
+                  className="aspect-video p-1 h-auto"
+                  title="City skyline background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-slate-700 via-blue-800 to-indigo-900 rounded-sm"></div>
+                </Button>
+                
+                <Button
+                  variant={settings.virtualBackground === 'warm' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'warm' })}
+                  className="aspect-video p-1 h-auto"
+                  title="Warm gradient background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-rose-300 via-pink-400 to-red-500 rounded-sm"></div>
+                </Button>
+              </div>
+
+              {/* Clean options */}
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant={settings.virtualBackground === 'clean-white' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'clean-white' })}
+                  className="aspect-video p-1 h-auto"
+                  title="Clean white background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-sm border"></div>
+                </Button>
+                
+                <Button
+                  variant={settings.virtualBackground === 'soft-blur' ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: 'soft-blur' })}
+                  className="aspect-video p-1 h-auto"
+                  title="Soft blur background"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-blue-50 via-indigo-100 to-purple-200 rounded-sm"></div>
+                </Button>
+                
+                <Button
+                  variant={settings.virtualBackground === null ? "default" : "outline"}
+                  onClick={() => onSettingsChange({ ...settings, virtualBackground: null })}
+                  className="aspect-video p-1 h-auto"
+                  title="No background (Green screen effect)"
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-green-400 to-green-600 rounded-sm flex items-center justify-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                </Button>
+              </div>
+            </div>
+          </details>
+        </CardContent>
+      </Card>
 
       {/* Recording Controls */}
       <Card className="mb-6">
@@ -491,15 +671,7 @@ export default function ControlsPanel({
             <Camera className="mr-2 h-4 w-4" />
             Camera Popup
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-sm w-full justify-start"
-            onClick={onPictureInPicture}
-          >
-            <Maximize2 className="mr-2 h-4 w-4" />
-            Picture in Picture
-          </Button>
+
           <Button variant="ghost" size="sm" className="text-sm w-full justify-start">
             <Settings className="mr-2 h-4 w-4" />
             Advanced options
@@ -507,186 +679,7 @@ export default function ControlsPanel({
         </CardContent>
       </Card>
 
-      {/* Virtual background */}
-      <Card className="mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Virtual background</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* First row - Basic options */}
-          <div className="grid grid-cols-3 gap-2">
-            {/* Green screen option */}
-            <Button
-              variant={settings.virtualBackground === null ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: null })}
-              className="aspect-video p-1 h-auto"
-              title="No background (Green screen effect)"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-green-400 to-green-600 rounded-sm flex items-center justify-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              </div>
-            </Button>
-            
-            {/* Space background */}
-            <Button
-              variant={settings.virtualBackground === 'space' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'space' })}
-              className="aspect-video p-1 h-auto"
-              title="Space background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 rounded-sm relative overflow-hidden">
-                <div className="absolute top-1 right-1 w-0.5 h-0.5 bg-white rounded-full"></div>
-                <div className="absolute bottom-1 left-1 w-0.5 h-0.5 bg-white rounded-full"></div>
-                <div className="absolute top-1/2 left-1/2 w-0.5 h-0.5 bg-white rounded-full"></div>
-              </div>
-            </Button>
-            
-            {/* Office background */}
-            <Button
-              variant={settings.virtualBackground === 'office' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'office' })}
-              className="aspect-video p-1 h-auto"
-              title="Warm office background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-amber-100 to-orange-200 rounded-sm"></div>
-            </Button>
-          </div>
 
-          {/* Second row - Nature & Outdoor */}
-          <div className="grid grid-cols-3 gap-2">
-            {/* Forest background */}
-            <Button
-              variant={settings.virtualBackground === 'forest' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'forest' })}
-              className="aspect-video p-1 h-auto"
-              title="Forest background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-green-800 via-green-600 to-emerald-500 rounded-sm"></div>
-            </Button>
-            
-            {/* Ocean background */}
-            <Button
-              variant={settings.virtualBackground === 'ocean' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'ocean' })}
-              className="aspect-video p-1 h-auto"
-              title="Ocean background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-blue-600 via-cyan-500 to-teal-400 rounded-sm"></div>
-            </Button>
-            
-            {/* Sunset background */}
-            <Button
-              variant={settings.virtualBackground === 'sunset' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'sunset' })}
-              className="aspect-video p-1 h-auto"
-              title="Sunset background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-orange-500 via-pink-500 to-purple-600 rounded-sm"></div>
-            </Button>
-          </div>
-
-          {/* Third row - Professional */}
-          <div className="grid grid-cols-3 gap-2">
-            {/* Modern office */}
-            <Button
-              variant={settings.virtualBackground === 'modern-office' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'modern-office' })}
-              className="aspect-video p-1 h-auto"
-              title="Modern office background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-slate-100 via-gray-200 to-zinc-300 rounded-sm"></div>
-            </Button>
-            
-            {/* Library background */}
-            <Button
-              variant={settings.virtualBackground === 'library' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'library' })}
-              className="aspect-video p-1 h-auto"
-              title="Library background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-amber-900 via-yellow-800 to-orange-700 rounded-sm"></div>
-            </Button>
-            
-            {/* City skyline */}
-            <Button
-              variant={settings.virtualBackground === 'city' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'city' })}
-              className="aspect-video p-1 h-auto"
-              title="City skyline background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-slate-700 via-blue-800 to-indigo-900 rounded-sm"></div>
-            </Button>
-          </div>
-
-          {/* Fourth row - Abstract & Creative */}
-          <div className="grid grid-cols-3 gap-2">
-            {/* Tech/Futuristic */}
-            <Button
-              variant={settings.virtualBackground === 'tech' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'tech' })}
-              className="aspect-video p-1 h-auto"
-              title="Tech/Futuristic background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-sm relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12"></div>
-              </div>
-            </Button>
-            
-            {/* Abstract waves */}
-            <Button
-              variant={settings.virtualBackground === 'waves' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'waves' })}
-              className="aspect-video p-1 h-auto"
-              title="Abstract waves background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-600 rounded-sm"></div>
-            </Button>
-            
-            {/* Warm gradient */}
-            <Button
-              variant={settings.virtualBackground === 'warm' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'warm' })}
-              className="aspect-video p-1 h-auto"
-              title="Warm gradient background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-rose-300 via-pink-400 to-red-500 rounded-sm"></div>
-            </Button>
-          </div>
-
-          {/* Fifth row - Minimalist & Clean */}
-          <div className="grid grid-cols-3 gap-2">
-            {/* Clean white */}
-            <Button
-              variant={settings.virtualBackground === 'clean-white' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'clean-white' })}
-              className="aspect-video p-1 h-auto"
-              title="Clean white background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-sm border"></div>
-            </Button>
-            
-            {/* Dark professional */}
-            <Button
-              variant={settings.virtualBackground === 'dark-pro' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'dark-pro' })}
-              className="aspect-video p-1 h-auto"
-              title="Dark professional background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-gray-900 via-slate-800 to-zinc-900 rounded-sm"></div>
-            </Button>
-            
-            {/* Soft blur */}
-            <Button
-              variant={settings.virtualBackground === 'soft-blur' ? "default" : "outline"}
-              onClick={() => onSettingsChange({ ...settings, virtualBackground: 'soft-blur' })}
-              className="aspect-video p-1 h-auto"
-              title="Soft blur background"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-blue-50 via-indigo-100 to-purple-200 rounded-sm"></div>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       <Separator className="my-6" />
 

@@ -37,8 +37,8 @@ export default function VideoPresenter() {
   const [settings, setSettings] = useState<PresenterSettings>({
     backgroundType: 'visible',
     shape: 'rectangle',
-    color: '#10b981',
-    virtualBackground: null,
+    color: '#3b82f6', // Beautiful blue instead of green
+    virtualBackground: 'tech', // Set tech background as default
     showPointer: true,
     size: 'medium',
     position: { x: 16, y: 16 },
