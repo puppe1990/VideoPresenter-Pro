@@ -140,7 +140,7 @@ export default function VideoPresenter() {
         try {
           mediaRecorderRef.current.stop()
         } catch (e) {
-          console.log('Recording already stopped')
+          console.log('Recording already stopped:', e)
         }
       }
       
@@ -157,7 +157,8 @@ export default function VideoPresenter() {
         URL.revokeObjectURL(downloadUrl)
       }
     }
-  }, []) // Remove dependencies - only run on unmount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Intentionally empty - only cleanup on unmount, not on state changes
 
   const getScreenStream = async () => {
     try {
