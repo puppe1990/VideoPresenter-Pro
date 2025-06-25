@@ -932,11 +932,40 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{ 
-            backgroundImage: settings.virtualBackground === 'space' 
-              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-              : settings.virtualBackground === 'office'
-              ? 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
-              : `url(${settings.virtualBackground})`
+            backgroundImage: (() => {
+              switch (settings.virtualBackground) {
+                case 'space':
+                  return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                case 'office':
+                  return 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
+                case 'forest':
+                  return 'linear-gradient(135deg, #1f2937 0%, #059669 50%, #10b981 100%)'
+                case 'ocean':
+                  return 'linear-gradient(135deg, #2563eb 0%, #06b6d4 50%, #14b8a6 100%)'
+                case 'sunset':
+                  return 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #9333ea 100%)'
+                case 'modern-office':
+                  return 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%)'
+                case 'library':
+                  return 'linear-gradient(135deg, #78350f 0%, #ca8a04 50%, #ea580c 100%)'
+                case 'city':
+                  return 'linear-gradient(135deg, #334155 0%, #1e40af 50%, #3730a3 100%)'
+                case 'tech':
+                  return 'linear-gradient(135deg, #22d3ee 0%, #3b82f6 50%, #9333ea 100%)'
+                case 'waves':
+                  return 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #4f46e5 100%)'
+                case 'warm':
+                  return 'linear-gradient(135deg, #fda4af 0%, #f472b6 50%, #ef4444 100%)'
+                case 'clean-white':
+                  return 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)'
+                case 'dark-pro':
+                  return 'linear-gradient(135deg, #111827 0%, #1e293b 50%, #18181b 100%)'
+                case 'soft-blur':
+                  return 'linear-gradient(135deg, #eff6ff 0%, #e0e7ff 50%, #e9d5ff 100%)'
+                default:
+                  return `url(${settings.virtualBackground})`
+              }
+            })()
           }}
         />
       )}
