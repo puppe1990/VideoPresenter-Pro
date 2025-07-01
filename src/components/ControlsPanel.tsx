@@ -1,7 +1,7 @@
 'use client'
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
-import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, Hexagon, Diamond, Heart, Star } from 'lucide-react'
+import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, Hexagon, Diamond, Heart, Star, Upload } from 'lucide-react'
 import { useTranslation } from '@/lib/useTranslation'
 import { type ExportFormat, type ConversionProgress, videoExporter } from '@/lib/videoConverter'
 import { Button } from '@/components/ui/button'
@@ -406,8 +406,8 @@ export default function ControlsPanel({
                 {/* Export Format Selection */}
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">{mounted ? t.exportFormat : 'Export Format:'}</Label>
-                  <div className="grid grid-cols-2 gap-1">
-                    {(['webm', 'mp4'] as ExportFormat[]).map((format) => {
+                  <div className="grid grid-cols-3 gap-1">
+                    {(['webm', 'mp4', 'webp'] as ExportFormat[]).map((format) => {
                       const formatInfo = videoExporter.getFormatInfo(format)
                       return (
                         <Button
@@ -729,6 +729,22 @@ export default function ControlsPanel({
           <CardTitle className="text-sm">{mounted ? t.additionalSettings : 'Additional settings'}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
+          {/* File Upload Info */}
+          <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Upload className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Add Files to Board</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              💡 Drag & drop files anywhere on the board to add them
+            </p>
+            <div className="text-xs text-muted-foreground">
+              <div>📷 Images: .png, .jpg, .gif, .webp</div>
+              <div>🎥 Videos: .mp4, .webm, .mov</div>
+              <div>📄 Documents: .pdf, .pptx, .key</div>
+            </div>
+          </div>
+          
           <Button 
             variant="ghost" 
             size="sm" 

@@ -121,52 +121,88 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
 
   // File handling functions
   const isValidFileType = (file: File) => {
-    const validTypes = [
+    // Define comprehensive MIME types and extensions
+    const validMimeTypes = [
+      // Images
       'image/png',
       'image/jpeg', 
       'image/jpg',
       'image/gif',
+      'image/webp', // Added WebP support
+      // Videos
       'video/mp4',
+      'video/webm', // Added WebM support
+      'video/quicktime', // Added MOV support
+      // Documents
       'application/pdf',
       'application/vnd.ms-powerpoint',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'application/vnd.apple.keynote'
+      'application/vnd.apple.keynote',
+      // Additional office formats
+      'application/vnd.ms-powerpoint.presentation.macroEnabled.12',
+      'application/vnd.oasis.opendocument.presentation'
     ]
     
-    const validExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.mp4', '.pdf', '.pptx', '.key']
-    const hasValidType = validTypes.includes(file.type)
-    const hasValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext))
+    const validExtensions = [
+      '.png', '.jpg', '.jpeg', '.gif', '.webp',
+      '.mp4', '.webm', '.mov',
+      '.pdf', '.pptx', '.key', '.ppt', '.odp'
+    ]
     
-    return hasValidType || hasValidExtension
+    // Check file size limits (50MB for videos, 10MB for others)
+    const maxSizeVideo = 50 * 1024 * 1024 // 50MB
+    const maxSizeOther = 10 * 1024 * 1024 // 10MB
+    const isVideo = file.type.startsWith('video/') || file.name.toLowerCase().match(/\.(mp4|webm|mov)$/i)
+    const maxSize = isVideo ? maxSizeVideo : maxSizeOther
+    
+    if (file.size > maxSize) {
+      const sizeMB = Math.round(file.size / (1024 * 1024))
+      const maxSizeMB = Math.round(maxSize / (1024 * 1024))
+      throw new Error(`File "${file.name}" is too large (${sizeMB}MB). Maximum size is ${maxSizeMB}MB.`)
+    }
+    
+    // Check MIME type
+    const hasValidMimeType = validMimeTypes.includes(file.type)
+    
+    // Check file extension as fallback
+    const fileName = file.name.toLowerCase()
+    const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext))
+    
+    return hasValidMimeType || hasValidExtension
   }
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files)
-    const validFiles = fileArray.filter(isValidFileType)
-    
-    if (validFiles.length === 0) {
-      alert('Please upload valid files: .png, .jpg, .gif, .mp4, .pdf, .pptx, .key')
-      return
+    const results = {
+      processed: 0,
+      skipped: 0,
+      errors: [] as string[]
     }
-
-    try {
-      for (const file of validFiles) {
-        console.log('Processing file:', file.name, file.type)
+    
+    // Process each file individually to provide better error handling
+    for (const file of fileArray) {
+      try {
+        if (!isValidFileType(file)) {
+          results.errors.push(`"${file.name}" - Invalid file type`)
+          results.skipped++
+          continue
+        }
+        
+        console.log('Processing file:', file.name, file.type, `${Math.round(file.size / 1024)}KB`)
         
         const fileUrl = URL.createObjectURL(file)
         
-        // Determine file type
+        // Determine file type with better detection
         let itemType: 'image' | 'video' | 'document' = 'image'
-        if (file.type.startsWith('video/')) {
+        
+        if (file.type.startsWith('video/') || file.name.toLowerCase().match(/\.(mp4|webm|mov)$/i)) {
           itemType = 'video'
         } else if (
-          file.type === 'application/pdf' ||
-          file.type === 'application/vnd.ms-powerpoint' ||
-          file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
-          file.type === 'application/vnd.apple.keynote' ||
-          file.name.toLowerCase().endsWith('.pdf') ||
-          file.name.toLowerCase().endsWith('.pptx') ||
-          file.name.toLowerCase().endsWith('.key')
+          file.type.includes('pdf') ||
+          file.type.includes('powerpoint') ||
+          file.type.includes('presentation') ||
+          file.type.includes('keynote') ||
+          file.name.toLowerCase().match(/\.(pdf|pptx?|key|odp)$/i)
         ) {
           itemType = 'document'
         }
@@ -176,27 +212,81 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         const boardWidth = container ? (zoomLevel < 1 ? container.clientWidth / zoomLevel : container.clientWidth) : 800
         const boardHeight = container ? (zoomLevel < 1 ? container.clientHeight / zoomLevel : container.clientHeight) : 600
         
+        // Better positioning - avoid overlapping with video
+        const videoArea = {
+          x: settings.position.x,
+          y: settings.position.y,
+          width: 320, // Approximate video width
+          height: 240  // Approximate video height
+        }
+        
+        let attempts = 0
+        let x, y
+        
+        do {
+          x = Math.random() * (boardWidth * 0.7) + boardWidth * 0.15
+          y = Math.random() * (boardHeight * 0.7) + boardHeight * 0.15
+          attempts++
+        } while (
+          attempts < 10 && 
+          x < videoArea.x + videoArea.width && 
+          x + 250 > videoArea.x && 
+          y < videoArea.y + videoArea.height && 
+          y + 180 > videoArea.y
+        )
+        
         const newItem: BoardItem = {
           id: `item-${Date.now()}-${Math.random()}`,
           type: itemType,
           src: fileUrl,
           fileName: file.name,
-          // Position items randomly across the available board space
-          x: Math.random() * (boardWidth * 0.7) + boardWidth * 0.15, // Use 70% of available width, 15% margin
-          y: Math.random() * (boardHeight * 0.7) + boardHeight * 0.15, // Use 70% of available height, 15% margin
+          x,
+          y,
           width: itemType === 'image' ? 200 : itemType === 'video' ? 300 : 250,
           height: itemType === 'image' ? 150 : itemType === 'video' ? 200 : 180,
           rotation: 0,
-          zIndex: boardItems.length + 1
+          zIndex: boardItems.length + results.processed + 1
         }
         
         setBoardItems(prev => [...prev, newItem])
+        results.processed++
+        
+      } catch (error) {
+        console.error('Error processing file:', file.name, error)
+        results.errors.push(`"${file.name}" - ${error instanceof Error ? error.message : 'Processing error'}`)
+        results.skipped++
       }
-    } catch (error) {
-      console.error('Error processing files:', error)
-      alert('Error processing files. Please try again.')
     }
-  }, [boardItems, zoomLevel])
+    
+    // Provide comprehensive feedback to user
+    if (results.processed === 0 && results.errors.length > 0) {
+      // No files processed
+      const errorMessage = results.errors.length === 1 
+        ? results.errors[0]
+        : `${results.errors.length} files had errors:\n${results.errors.slice(0, 3).join('\n')}${results.errors.length > 3 ? '\n...' : ''}`
+      
+      alert(`❌ No files could be processed.\n\n${errorMessage}\n\nSupported formats: .png, .jpg, .gif, .webp, .mp4, .webm, .pdf, .pptx, .key`)
+    } else if (results.processed > 0) {
+      // Some or all files processed
+      let message = `✅ Successfully added ${results.processed} file${results.processed === 1 ? '' : 's'} to your board!`
+      
+      if (results.errors.length > 0) {
+        message += `\n\n⚠️ ${results.errors.length} file${results.errors.length === 1 ? '' : 's'} skipped:\n${results.errors.slice(0, 2).join('\n')}${results.errors.length > 2 ? '\n...' : ''}`
+      }
+      
+      // Show success message briefly
+      const notification = document.createElement('div')
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in'
+      notification.textContent = `✅ Added ${results.processed} file${results.processed === 1 ? '' : 's'}!`
+      document.body.appendChild(notification)
+      
+      setTimeout(() => {
+        notification.remove()
+      }, 3000)
+      
+      console.log(message)
+    }
+  }, [boardItems, zoomLevel, settings.position])
 
   // Drag and drop event handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -397,8 +487,6 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       setBoardItems(prev => [...prev, newItem])
     }
   }, [boardItems, zoomLevel])
-
-
 
   // Video resize handler
   const handleVideoResizeMouseDown = useCallback((e: React.MouseEvent, handle: string) => {
@@ -984,11 +1072,15 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
                 <p className="text-sm text-muted-foreground">Add images, videos, PDFs, or presentations to your board</p>
               </div>
             </div>
-            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 text-muted-foreground mb-2">
               <FileImage className="h-4 w-4" />
               <FileVideo className="h-4 w-4" />
               <FileText className="h-4 w-4" />
-              <span className="text-xs">(.png, .jpg, .gif, .mp4, .pdf, .pptx, .key)</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <div>Images: .png, .jpg, .gif, .webp</div>
+              <div>Videos: .mp4, .webm, .mov (max 50MB)</div>
+              <div>Documents: .pdf, .pptx, .key (max 10MB)</div>
             </div>
           </div>
         </div>

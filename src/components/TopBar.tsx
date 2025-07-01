@@ -74,15 +74,15 @@ export default function TopBar() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <FileImage className="h-3 w-3 text-blue-500" />
-                    <span className="text-xs">Images: .png, .jpg, .jpeg, .gif</span>
+                    <span className="text-xs">Images: .png, .jpg, .jpeg, .gif, .webp (max 10MB)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <FileVideo className="h-3 w-3 text-green-500" />
-                    <span className="text-xs">Videos: .mp4</span>
+                    <span className="text-xs">Videos: .mp4, .webm, .mov (max 50MB)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <FileText className="h-3 w-3 text-orange-500" />
-                    <span className="text-xs">Documents: .pdf, .pptx, .key</span>
+                    <span className="text-xs">Documents: .pdf, .pptx, .key, .ppt (max 10MB)</span>
                   </div>
                 </div>
                 
