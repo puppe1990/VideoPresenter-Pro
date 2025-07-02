@@ -790,6 +790,11 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
 
+      if (canvas.width === 0 || canvas.height === 0) {
+        animationFrame = requestAnimationFrame(drawFrame)
+        return
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       if (settings.backgroundType === 'portraitBlur' && bodyPixModel) {
@@ -1191,6 +1196,19 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               </div>
             </div>
 
+            {/* Portrait blur model loading placeholder */}
+            {settings.backgroundType === 'portraitBlur' && !bodyPixModel && (
+              <div
+                className={`${customVideoSize ? 'w-full h-full' : getSizeClass()} ${getShapeClass()} bg-gray-800 flex items-center justify-center text-white text-sm absolute inset-0 z-0`}
+                style={getShapeStyle()}
+              >
+                <div className="text-center">
+                  <div className="animate-pulse mb-2">🤖</div>
+                  <div>Loading blur model...</div>
+                </div>
+              </div>
+            )}
+
             {/* Main video element */}
             <video
               ref={videoRef}
@@ -1203,7 +1221,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               style={getShapeStyle()}
             />
             
-            {/* Canvas for advanced effects (currently hidden while we debug) */}
+            {/* Canvas used for portrait blur effect */}
             <canvas
               ref={canvasRef}
               className={`${settings.backgroundType === 'portraitBlur' ? '' : 'hidden'}`}
