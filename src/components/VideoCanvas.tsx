@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
+import { Move, Upload, Download, FileImage, FileVideo, FileText, X, Copy, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import DocumentViewer from './DocumentViewer'
 
 interface VideoCanvasProps {
@@ -21,6 +21,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   const containerRef = useRef<HTMLDivElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const boardImportRef = useRef<HTMLInputElement>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [isDragOver, setIsDragOver] = useState(false)
   const [boardItems, setBoardItems] = useState<BoardItem[]>([])
@@ -125,10 +126,11 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     const validMimeTypes = [
       // Images
       'image/png',
-      'image/jpeg', 
+      'image/jpeg',
       'image/jpg',
       'image/gif',
       'image/webp', // Added WebP support
+      'image/svg+xml', // SVG support
       // Videos
       'video/mp4',
       'video/webm', // Added WebM support
@@ -145,6 +147,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     
     const validExtensions = [
       '.png', '.jpg', '.jpeg', '.gif', '.webp',
+      '.svg',
       '.mp4', '.webm', '.mov',
       '.pdf', '.pptx', '.key', '.ppt', '.odp'
     ]
@@ -487,6 +490,49 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       setBoardItems(prev => [...prev, newItem])
     }
   }, [boardItems, zoomLevel])
+
+  const exportBoard = useCallback(() => {
+    const data = JSON.stringify(boardItems, null, 2)
+    const blob = new Blob([data], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'board.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [boardItems])
+
+  const handleBoardImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string)
+        if (Array.isArray(data)) {
+          const items = data.filter((item: Record<string, unknown>) =>
+            item && typeof item.id === 'string' &&
+            typeof item.type === 'string' &&
+            typeof item.x === 'number' &&
+            typeof item.y === 'number' &&
+            typeof item.width === 'number' &&
+            typeof item.height === 'number' &&
+            typeof item.rotation === 'number' &&
+            typeof item.zIndex === 'number'
+          ) as BoardItem[]
+          setBoardItems(items)
+        }
+      } catch (err) {
+        console.error('Failed to load board', err)
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }, [])
+
+  const importBoard = () => {
+    boardImportRef.current?.click()
+  }
 
   // Video resize handler
   const handleVideoResizeMouseDown = useCallback((e: React.MouseEvent, handle: string) => {
@@ -1003,6 +1049,30 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         )}
       </div>
 
+      {/* Board Save/Load */}
+      <div className="absolute top-4 left-4 z-50 flex flex-col gap-2">
+        <div className="bg-background/90 backdrop-blur-sm rounded-lg border p-1 flex flex-col gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={exportBoard}
+            title="Export Board"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={importBoard}
+            title="Load Board"
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       {/* Zoom Content Wrapper */}
       <div
         className="origin-center transition-transform duration-200 ease-out"
@@ -1446,8 +1516,15 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         ref={fileInputRef}
         type="file"
         multiple
-        accept=".png,.jpg,.jpeg,.gif,.mp4,.pdf,.pptx,.key"
+        accept=".png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.webm,.mov,.pdf,.pptx,.key,.ppt,.odp"
         onChange={handleFileInputChange}
+        className="hidden"
+      />
+      <input
+        ref={boardImportRef}
+        type="file"
+        accept="application/json"
+        onChange={handleBoardImport}
         className="hidden"
       />
       </div>

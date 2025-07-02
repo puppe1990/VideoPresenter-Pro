@@ -739,9 +739,9 @@ export default function ControlsPanel({
               💡 Drag & drop files anywhere on the board to add them
             </p>
             <div className="text-xs text-muted-foreground">
-              <div>📷 Images: .png, .jpg, .gif, .webp</div>
+              <div>📷 Images: .png, .jpg, .gif, .webp, .svg</div>
               <div>🎥 Videos: .mp4, .webm, .mov</div>
-              <div>📄 Documents: .pdf, .pptx, .key</div>
+              <div>📄 Documents: .pdf, .pptx, .ppt, .key</div>
             </div>
           </div>
           

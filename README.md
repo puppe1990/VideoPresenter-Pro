@@ -32,6 +32,8 @@ A professional video presentation and recording application built with Next.js, 
 - **Boundary Constraints**: Video stays within canvas bounds
 - **Position Reset**: One-click return to center
 - **Smooth Animations**: CSS transitions for professional feel
+- **Board Export/Import**: Save and load board layouts as JSON
+- **SVG Support**: Add scalable vector graphics to your board
 
 ## 🚀 Getting Started
 

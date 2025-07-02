@@ -74,7 +74,7 @@ export default function TopBar() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <FileImage className="h-3 w-3 text-blue-500" />
-                    <span className="text-xs">Images: .png, .jpg, .jpeg, .gif, .webp (max 10MB)</span>
+                    <span className="text-xs">Images: .png, .jpg, .jpeg, .gif, .webp, .svg (max 10MB)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <FileVideo className="h-3 w-3 text-green-500" />
