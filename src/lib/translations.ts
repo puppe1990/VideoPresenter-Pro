@@ -90,6 +90,7 @@ export interface Translations {
   teleprompter: string
   cameraPopup: string
   advancedOptions: string
+  addNote: string
   
   // Sidebar
   hideSidebar: string
@@ -197,6 +198,7 @@ export const translations: Record<Language, Translations> = {
     teleprompter: 'Teleprompter',
     cameraPopup: 'Camera Popup',
     advancedOptions: 'Advanced options',
+    addNote: 'Add Note',
     
     // Sidebar
     hideSidebar: 'Hide sidebar (Tab)',
@@ -303,6 +305,7 @@ export const translations: Record<Language, Translations> = {
     teleprompter: 'Teleprompter',
     cameraPopup: 'Pop-up da Câmera',
     advancedOptions: 'Opções avançadas',
+    addNote: 'Adicionar nota',
     
     // Sidebar
     hideSidebar: 'Ocultar barra lateral (Tab)',

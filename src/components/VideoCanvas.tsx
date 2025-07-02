@@ -1,12 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import Image from 'next/image'
 import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import DocumentViewer from './DocumentViewer'
+
+export interface VideoCanvasHandle {
+  addNote: () => void
+}
 
 interface VideoCanvasProps {
   videoRef: React.RefObject<HTMLVideoElement | null>
@@ -16,7 +20,7 @@ interface VideoCanvasProps {
   isPictureInPicture: boolean
 }
 
-export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture }: VideoCanvasProps) {
+const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
@@ -25,6 +29,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   const [isDragOver, setIsDragOver] = useState(false)
   const [boardItems, setBoardItems] = useState<BoardItem[]>([])
   const [selectedItem, setSelectedItem] = useState<string | null>(null)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isResizing, setIsResizing] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -43,7 +48,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
 
   interface BoardItem {
     id: string
-    type: 'image' | 'video' | 'text' | 'document'
+    type: 'image' | 'video' | 'document' | 'note'
     src?: string
     content?: string
     fileName?: string
@@ -487,6 +492,38 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       setBoardItems(prev => [...prev, newItem])
     }
   }, [boardItems, zoomLevel])
+
+  const updateItemContent = useCallback((itemId: string, content: string) => {
+    setBoardItems(prev => prev.map(item => item.id === itemId ? { ...item, content } : item))
+  }, [])
+
+  const addNote = useCallback((x?: number, y?: number) => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    const boardWidth = rect ? (zoomLevel < 1 ? rect.width / zoomLevel : rect.width) : 800
+    const boardHeight = rect ? (zoomLevel < 1 ? rect.height / zoomLevel : rect.height) : 600
+
+    const posX = x !== undefined ? x : boardWidth / 2 - 100
+    const posY = y !== undefined ? y : boardHeight / 2 - 75
+
+    const newItem: BoardItem = {
+      id: `note-${Date.now()}-${Math.random()}`,
+      type: 'note',
+      content: 'New Note',
+      x: posX,
+      y: posY,
+      width: 200,
+      height: 150,
+      rotation: 0,
+      zIndex: boardItems.length + 1
+    }
+
+    setBoardItems(prev => [...prev, newItem])
+    setSelectedItem(newItem.id)
+    setEditingNoteId(newItem.id)
+    setIsVideoSelected(false)
+  }, [boardItems, zoomLevel])
+
+  useImperativeHandle(ref, () => ({ addNote }))
 
   // Video resize handler
   const handleVideoResizeMouseDown = useCallback((e: React.MouseEvent, handle: string) => {
@@ -951,7 +988,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={`w-full h-full relative p-8 ${zoomLevel < 1 ? 'overflow-visible' : 'overflow-hidden'}`}
       style={getBackgroundStyle()}
@@ -959,6 +996,14 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onMouseDown={handlePanStart}
+      onDoubleClick={(e) => {
+        if (e.target === containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect()
+          const x = (e.clientX - rect.left) / zoomLevel - 100
+          const y = (e.clientY - rect.top) / zoomLevel - 75
+          addNote(x, y)
+        }
+      }}
     >
       {/* Zoom Controls */}
       <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
@@ -1348,6 +1393,24 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
                 }
                 className="w-full h-full"
               />
+            ) : item.type === 'note' ? (
+              editingNoteId === item.id ? (
+                <textarea
+                  value={item.content || ''}
+                  onChange={(e) => updateItemContent(item.id, e.target.value)}
+                  onBlur={() => setEditingNoteId(null)}
+                  className="w-full h-full bg-yellow-200 rounded-lg shadow-lg p-2 text-black text-sm resize-none focus:outline-none"
+                  style={{ whiteSpace: 'pre-wrap' }}
+                  autoFocus
+                />
+              ) : (
+                <div
+                  className="w-full h-full bg-yellow-200 rounded-lg shadow-lg p-2 text-black text-sm whitespace-pre-wrap"
+                  onDoubleClick={() => setEditingNoteId(item.id)}
+                >
+                  {item.content}
+                </div>
+              )
             ) : (
               <div className="w-full h-full bg-white rounded-lg shadow-lg p-4 text-black">
                 {item.content || 'Text content'}
@@ -1466,4 +1529,6 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       </div>
     </div>
   )
-} 
+})
+
+export default VideoCanvas

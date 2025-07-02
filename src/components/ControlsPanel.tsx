@@ -1,7 +1,7 @@
 'use client'
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
-import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, Hexagon, Diamond, Heart, Star, Upload, X } from 'lucide-react'
+import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, FileText, Hexagon, Diamond, Heart, Star, Upload, X } from 'lucide-react'
 import { useRef, useEffect } from 'react'
 import { useTranslation } from '@/lib/useTranslation'
 import { type ExportFormat, type ConversionProgress, videoExporter } from '@/lib/videoConverter'
@@ -29,6 +29,7 @@ interface ControlsPanelProps {
   onPictureInPicture: () => void
   onToggleTeleprompter: () => void
   onToggleCameraPopup: () => void
+  onAddNote: () => void
   exportFormat: ExportFormat
   onExportFormatChange: (format: ExportFormat) => void
   isConverting: boolean
@@ -51,6 +52,7 @@ export default function ControlsPanel({
   onPictureInPicture,
   onToggleTeleprompter,
   onToggleCameraPopup,
+  onAddNote,
   exportFormat,
   onExportFormatChange,
   isConverting,
@@ -836,18 +838,27 @@ export default function ControlsPanel({
             </div>
           </div>
           
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="text-sm w-full justify-start"
             onClick={onToggleTeleprompter}
           >
             <Type className="mr-2 h-4 w-4" />
             {mounted ? t.teleprompter : 'Teleprompter'}
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-sm w-full justify-start"
+            onClick={onAddNote}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            {mounted ? t.addNote : 'Add Note'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             className="text-sm w-full justify-start"
             onClick={onToggleCameraPopup}
           >
