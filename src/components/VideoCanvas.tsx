@@ -755,7 +755,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     let animationFrame: number
 
     const drawFrame = async () => {
-      if (video.readyState < 2) { // HAVE_CURRENT_DATA
+      if (video.readyState < 2) {
         animationFrame = requestAnimationFrame(drawFrame)
         return
       }
@@ -765,36 +765,31 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         return
       }
 
-      // Set canvas size to match video and settings
       const aspectRatio = video.videoWidth / video.videoHeight
-      
-      // Get max dimensions based on size setting
       let maxWidth: number, maxHeight: number
       switch (settings.size) {
         case 'small':
-          maxWidth = 384; maxHeight = 320; break  // max-w-sm max-h-80
+          maxWidth = 384; maxHeight = 320; break
         case 'medium':
-          maxWidth = 672; maxHeight = 384; break  // max-w-2xl max-h-96
+          maxWidth = 672; maxHeight = 384; break
         case 'large':
-          maxWidth = 896; maxHeight = 500; break  // max-w-4xl max-h-[500px]
+          maxWidth = 896; maxHeight = 500; break
         case 'xlarge':
-          maxWidth = 1152; maxHeight = 600; break // max-w-6xl max-h-[600px]
+          maxWidth = 1152; maxHeight = 600; break
         default:
           maxWidth = 672; maxHeight = 384; break
       }
-      
-      let canvasWidth = maxWidth
-      let canvasHeight = maxWidth / aspectRatio
-      
-      if (canvasHeight > maxHeight) {
-        canvasHeight = maxHeight
-        canvasWidth = maxHeight * aspectRatio
+
+      let displayWidth = maxWidth
+      let displayHeight = maxWidth / aspectRatio
+      if (displayHeight > maxHeight) {
+        displayHeight = maxHeight
+        displayWidth = maxHeight * aspectRatio
       }
 
-      canvas.width = canvasWidth
-      canvas.height = canvasHeight
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
 
-      // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       if (settings.backgroundType === 'portraitBlur' && bodyPixModel) {
@@ -803,22 +798,22 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         })
         await bodyPix.drawBokehEffect(canvas, video, segmentation, 15, 5, false)
       } else {
-        // Apply background blur if needed
         if (settings.backgroundType === 'blurred') {
           ctx.filter = 'blur(10px)'
         } else {
           ctx.filter = 'none'
         }
 
-        // Draw video
         if (settings.backgroundType !== 'hidden') {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
         } else {
-          // For hidden background, just draw a solid color
           ctx.fillStyle = settings.color
           ctx.fillRect(0, 0, canvas.width, canvas.height)
         }
       }
+
+      canvas.style.width = `${displayWidth}px`
+      canvas.style.height = `${displayHeight}px`
 
       animationFrame = requestAnimationFrame(drawFrame)
     }
