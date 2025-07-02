@@ -1,6 +1,7 @@
 # VideoPresenter Pro
 
-<img width="1700" alt="Screenshot 2025-06-25 at 14 56 10" src="https://github.com/user-attachments/assets/05903197-3d60-4a3b-9f87-b8612a622290" />
+<img width="1704" alt="Screenshot 2025-07-02 at 20 04 36" src="https://github.com/user-attachments/assets/a6f90478-ae36-4ef1-ba2e-946c72f8c885" />
+
 
 A professional video presentation and recording application built with Next.js, featuring drag & drop video positioning, screen capture, and real-time effects.
 
