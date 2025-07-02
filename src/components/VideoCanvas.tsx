@@ -851,9 +851,22 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }
 
   const getShapeStyle = () => {
+    const filterParts: string[] = []
+    if (settings.backgroundType === 'blurred') filterParts.push('blur(10px)')
+    switch (settings.videoFilter) {
+      case 'grayscale':
+        filterParts.push('grayscale(1)')
+        break
+      case 'sepia':
+        filterParts.push('sepia(1)')
+        break
+      case 'invert':
+        filterParts.push('invert(1)')
+        break
+    }
     const baseStyle = {
       border: `4px solid ${settings.color}`,
-      filter: settings.backgroundType === 'blurred' ? 'blur(10px)' : 'none',
+      filter: filterParts.join(' ') || 'none',
       minHeight: '200px',
       minWidth: '300px',
       ...(customVideoSize && {

@@ -24,6 +24,18 @@ export interface Translations {
   warmGradientBackground: string
   cleanWhiteBackground: string
   softBlurBackground: string
+
+  // Custom Background
+  customBackground: string
+  uploadBackground: string
+  removeBackground: string
+
+  // Filters
+  filters: string
+  noFilter: string
+  grayscale: string
+  sepia: string
+  invert: string
   
   // Recording Controls
   recording: string
@@ -119,6 +131,18 @@ export const translations: Record<Language, Translations> = {
     warmGradientBackground: 'Warm gradient background',
     cleanWhiteBackground: 'Clean white background',
     softBlurBackground: 'Soft blur background',
+
+    // Custom Background
+    customBackground: 'Custom background',
+    uploadBackground: 'Upload background',
+    removeBackground: 'Remove background',
+
+    // Filters
+    filters: 'Video filters',
+    noFilter: 'No filter',
+    grayscale: 'Grayscale',
+    sepia: 'Sepia',
+    invert: 'Invert',
     
     // Recording Controls
     recording: 'Recording',
@@ -213,6 +237,18 @@ export const translations: Record<Language, Translations> = {
     warmGradientBackground: 'Fundo gradiente quente',
     cleanWhiteBackground: 'Fundo branco limpo',
     softBlurBackground: 'Fundo desfoque suave',
+
+    // Custom Background
+    customBackground: 'Fundo personalizado',
+    uploadBackground: 'Enviar fundo',
+    removeBackground: 'Remover fundo',
+
+    // Filters
+    filters: 'Filtros de vídeo',
+    noFilter: 'Sem filtro',
+    grayscale: 'Tons de cinza',
+    sepia: 'Sépia',
+    invert: 'Inverter',
     
     // Recording Controls
     recording: 'Gravação',
