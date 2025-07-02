@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import VideoCanvas from './VideoCanvas'
+import VideoCanvas, { type VideoCanvasHandle } from './VideoCanvas'
 import ControlsPanel from './ControlsPanel'
 import TopBar from './TopBar'
 import Teleprompter from './Teleprompter'
@@ -50,6 +50,7 @@ export default function VideoPresenter() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true)
 
   const videoRef = useRef<HTMLVideoElement>(null)
+  const videoCanvasRef = useRef<VideoCanvasHandle>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -671,6 +672,10 @@ export default function VideoPresenter() {
     setIsSidebarVisible(!isSidebarVisible)
   }, [isSidebarVisible])
 
+  const handleAddNote = () => {
+    videoCanvasRef.current?.addNote()
+  }
+
   const openCameraPopup = () => {
     const popup = window.open(
       '',
@@ -852,6 +857,7 @@ export default function VideoPresenter() {
         {/* Main video area */}
         <div className="flex-1 relative overflow-hidden">
           <VideoCanvas
+            ref={videoCanvasRef}
             videoRef={videoRef}
             settings={settings}
             onSettingsChange={setSettings}
@@ -904,6 +910,7 @@ export default function VideoPresenter() {
               onPictureInPicture={handlePictureInPicture}
               onToggleTeleprompter={handleToggleTeleprompter}
               onToggleCameraPopup={handleToggleCameraPopup}
+              onAddNote={handleAddNote}
               exportFormat={exportFormat}
               onExportFormatChange={setExportFormat}
               isConverting={isConverting}
