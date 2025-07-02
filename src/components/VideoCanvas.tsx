@@ -45,6 +45,7 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const moveFrameRef = useRef<number | null>(null)
 
   interface BoardItem {
     id: string
@@ -383,15 +384,24 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
         
         const clampedX = Math.max(minX, Math.min(newX, maxX))
         const clampedY = Math.max(minY, Math.min(newY, maxY))
-        
-        setBoardItems(prev => prev.map(prevItem => 
-          prevItem.id === itemId 
-            ? { ...prevItem, x: clampedX, y: clampedY }
-            : prevItem
-        ))
+
+        if (moveFrameRef.current) {
+          cancelAnimationFrame(moveFrameRef.current)
+        }
+        moveFrameRef.current = requestAnimationFrame(() => {
+          setBoardItems(prev => prev.map(prevItem =>
+            prevItem.id === itemId
+              ? { ...prevItem, x: clampedX, y: clampedY }
+              : prevItem
+          ))
+        })
       }
-      
+
       const handleMouseUp = () => {
+        if (moveFrameRef.current) {
+          cancelAnimationFrame(moveFrameRef.current)
+          moveFrameRef.current = null
+        }
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
       }
