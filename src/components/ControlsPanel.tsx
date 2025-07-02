@@ -1,7 +1,8 @@
 'use client'
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
-import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, Hexagon, Diamond, Heart, Star, Upload } from 'lucide-react'
+import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, Hexagon, Diamond, Heart, Star, Upload, X } from 'lucide-react'
+import { useRef, useEffect } from 'react'
 import { useTranslation } from '@/lib/useTranslation'
 import { type ExportFormat, type ConversionProgress, videoExporter } from '@/lib/videoConverter'
 import { Button } from '@/components/ui/button'
@@ -56,6 +57,16 @@ export default function ControlsPanel({
   conversionProgress
 }: ControlsPanelProps) {
   const { t, mounted } = useTranslation()
+  const bgInputRef = useRef<HTMLInputElement>(null)
+  const customBgUrlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (customBgUrlRef.current) {
+        URL.revokeObjectURL(customBgUrlRef.current)
+      }
+    }
+  }, [])
   
   const backgroundOptions = [
     { value: 'visible', label: t.visible, icon: Eye },
@@ -81,6 +92,34 @@ export default function ControlsPanel({
     { value: '#ef4444', name: t.red },
     { value: '#6b7280', name: t.gray },
   ]
+
+  const filterOptions = [
+    { value: 'none', label: t.noFilter },
+    { value: 'grayscale', label: t.grayscale },
+    { value: 'sepia', label: t.sepia },
+    { value: 'invert', label: t.invert }
+  ] as const
+
+  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const url = URL.createObjectURL(file)
+      if (customBgUrlRef.current) {
+        URL.revokeObjectURL(customBgUrlRef.current)
+      }
+      customBgUrlRef.current = url
+      onSettingsChange({ ...settings, virtualBackground: url })
+      e.target.value = ''
+    }
+  }
+
+  const removeCustomBg = () => {
+    if (customBgUrlRef.current) {
+      URL.revokeObjectURL(customBgUrlRef.current)
+      customBgUrlRef.current = null
+    }
+    onSettingsChange({ ...settings, virtualBackground: null })
+  }
 
 
 
@@ -276,6 +315,36 @@ export default function ControlsPanel({
               </div>
             </div>
           </details>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">{mounted ? t.customBackground : 'Custom background'}</Label>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => bgInputRef.current?.click()}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {mounted ? t.uploadBackground : 'Upload background'}
+            </Button>
+            {settings.virtualBackground && settings.virtualBackground.startsWith('blob:') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
+                onClick={removeCustomBg}
+              >
+                <X className="mr-2 h-4 w-4" />
+                {mounted ? t.removeBackground : 'Remove background'}
+              </Button>
+            )}
+            <input
+              ref={bgInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleBgUpload}
+              className="hidden"
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -654,6 +723,28 @@ export default function ControlsPanel({
                   </div>
                 )}
                 <span className="sr-only">{name}</span>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">{mounted ? t.filters : 'Video filters'}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-2">
+            {filterOptions.map(({ value, label }) => (
+              <Button
+                key={value}
+                variant={settings.videoFilter === value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onSettingsChange({ ...settings, videoFilter: value })}
+                className="text-xs"
+              >
+                {label}
               </Button>
             ))}
           </div>
