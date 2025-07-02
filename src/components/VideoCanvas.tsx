@@ -651,11 +651,9 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
   }, [])
 
   const handleWheel = useCallback((e: WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault()
-      const zoomFactor = e.deltaY > 0 ? -0.1 : 0.1
-      setZoomLevel(prev => Math.max(0.1, Math.min(3, prev + zoomFactor)))
-    }
+    e.preventDefault()
+    const zoomFactor = e.deltaY > 0 ? -0.1 : 0.1
+    setZoomLevel(prev => Math.max(0.1, Math.min(3, prev + zoomFactor)))
   }, [])
 
   const handlePanStart = useCallback((e: React.MouseEvent) => {
