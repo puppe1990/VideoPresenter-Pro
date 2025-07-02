@@ -29,6 +29,7 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
   const [isDragOver, setIsDragOver] = useState(false)
   const [boardItems, setBoardItems] = useState<BoardItem[]>([])
   const [selectedItem, setSelectedItem] = useState<string | null>(null)
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null)
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isResizing, setIsResizing] = useState(false)
@@ -343,6 +344,7 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
     e.preventDefault()
     e.stopPropagation()
     setSelectedItem(itemId)
+    setDraggingItemId(itemId)
     
     const item = boardItems.find(item => item.id === itemId)
     if (!item) return
@@ -402,6 +404,7 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
           cancelAnimationFrame(moveFrameRef.current)
           moveFrameRef.current = null
         }
+        setDraggingItemId(null)
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
       }
@@ -1323,7 +1326,9 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
         return (
           <div
             key={item.id}
-            className={`absolute cursor-move select-none transition-all duration-200 ${
+            className={`absolute cursor-move select-none ${
+              draggingItemId === item.id ? '' : 'transition-all duration-200'
+            } ${
               selectedItem === item.id ? 'shadow-xl' : ''
             } ${zoomLevel < 0.5 ? 'hover:shadow-lg' : ''}`}
             style={{
