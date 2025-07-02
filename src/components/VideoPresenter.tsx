@@ -10,7 +10,7 @@ import { useTranslation } from '@/lib/useTranslation'
 
 
 export interface PresenterSettings {
-  backgroundType: 'visible' | 'blurred' | 'hidden'
+  backgroundType: 'visible' | 'blurred' | 'portraitBlur' | 'hidden'
   shape: 'rectangle' | 'circle' | 'rounded' | 'hexagon' | 'diamond' | 'heart' | 'star'
   color: string
   virtualBackground: string | null

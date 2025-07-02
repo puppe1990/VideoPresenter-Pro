@@ -49,6 +49,7 @@ export interface Translations {
   realBackground: string
   visible: string
   blurred: string
+  portraitBlur: string
   hidden: string
   
   // Shape
@@ -144,6 +145,7 @@ export const translations: Record<Language, Translations> = {
     realBackground: 'Real background',
     visible: 'Visible',
     blurred: 'Blurred',
+    portraitBlur: 'Portrait blur',
     hidden: 'Hidden',
     
     // Shape
@@ -238,6 +240,7 @@ export const translations: Record<Language, Translations> = {
     realBackground: 'Fundo real',
     visible: 'Visível',
     blurred: 'Desfocado',
+    portraitBlur: 'Desfocar fundo',
     hidden: 'Oculto',
     
     // Shape

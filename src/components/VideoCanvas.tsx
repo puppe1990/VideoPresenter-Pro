@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import * as bodyPix from '@tensorflow-models/body-pix'
+import '@tensorflow/tfjs'
 import Image from 'next/image'
 import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +20,7 @@ interface VideoCanvasProps {
 
 export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture }: VideoCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [bodyPixModel, setBodyPixModel] = useState<bodyPix.BodyPix | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -736,6 +739,12 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }, [handleZoomIn, handleZoomOut, handleZoomReset])
 
   useEffect(() => {
+    if (settings.backgroundType === 'portraitBlur' && !bodyPixModel) {
+      bodyPix.load().then(setBodyPixModel)
+    }
+  }, [settings.backgroundType, bodyPixModel, setBodyPixModel])
+
+  useEffect(() => {
     const canvas = canvasRef.current
     const video = videoRef.current
     if (!canvas || !video) return
@@ -745,7 +754,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
 
     let animationFrame: number
 
-    const drawFrame = () => {
+    const drawFrame = async () => {
       if (video.readyState < 2) { // HAVE_CURRENT_DATA
         animationFrame = requestAnimationFrame(drawFrame)
         return
@@ -788,20 +797,27 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      // Apply background blur if needed
-      if (settings.backgroundType === 'blurred') {
-        ctx.filter = 'blur(10px)'
+      if (settings.backgroundType === 'portraitBlur' && bodyPixModel) {
+        const segmentation = await bodyPixModel.segmentPerson(video, {
+          internalResolution: 'low'
+        })
+        await bodyPix.drawBokehEffect(canvas, video, segmentation, 15, 5, false)
       } else {
-        ctx.filter = 'none'
-      }
+        // Apply background blur if needed
+        if (settings.backgroundType === 'blurred') {
+          ctx.filter = 'blur(10px)'
+        } else {
+          ctx.filter = 'none'
+        }
 
-      // Draw video
-      if (settings.backgroundType !== 'hidden') {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      } else {
-        // For hidden background, just draw a solid color
-        ctx.fillStyle = settings.color
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        // Draw video
+        if (settings.backgroundType !== 'hidden') {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        } else {
+          // For hidden background, just draw a solid color
+          ctx.fillStyle = settings.color
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+        }
       }
 
       animationFrame = requestAnimationFrame(drawFrame)
@@ -827,7 +843,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       video.removeEventListener('loadeddata', handleLoadedData)
       video.removeEventListener('canplay', handleLoadedData)
     }
-  }, [videoRef, settings])
+  }, [videoRef, settings, bodyPixModel])
 
   const getShapeClass = () => {
     const baseClasses = 'transition-all duration-500 shadow-lg'
@@ -1188,14 +1204,14 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
               playsInline
               className={`${customVideoSize ? '' : getSizeClass()} ${getShapeClass()} transition-all duration-300 ease-in-out ${
                 settings.isDragging ? 'pointer-events-none' : ''
-              } bg-gray-800 relative z-10`}
+              } bg-gray-800 relative z-10 ${settings.backgroundType === 'portraitBlur' ? 'hidden' : ''}`}
               style={getShapeStyle()}
             />
             
             {/* Canvas for advanced effects (currently hidden while we debug) */}
             <canvas
               ref={canvasRef}
-              className="hidden"
+              className={`${settings.backgroundType === 'portraitBlur' ? '' : 'hidden'}`}
               style={getShapeStyle()}
             />
             

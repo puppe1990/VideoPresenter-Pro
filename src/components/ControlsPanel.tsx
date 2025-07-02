@@ -1,7 +1,7 @@
 'use client'
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
-import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, Hexagon, Diamond, Heart, Star, Upload } from 'lucide-react'
+import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, Hexagon, Diamond, Heart, Star, Upload, Focus } from 'lucide-react'
 import { useTranslation } from '@/lib/useTranslation'
 import { type ExportFormat, type ConversionProgress, videoExporter } from '@/lib/videoConverter'
 import { Button } from '@/components/ui/button'
@@ -60,6 +60,7 @@ export default function ControlsPanel({
   const backgroundOptions = [
     { value: 'visible', label: t.visible, icon: Eye },
     { value: 'blurred', label: t.blurred, icon: EyeOff },
+    { value: 'portraitBlur', label: t.portraitBlur, icon: Focus },
     { value: 'hidden', label: t.hidden, icon: EyeOff },
   ] as const
 
