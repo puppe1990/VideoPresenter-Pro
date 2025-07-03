@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
+import TemplateSelector from './TemplateSelector'
 import clsx from 'clsx'
 
 interface ControlsPanelProps {
@@ -139,6 +140,8 @@ export default function ControlsPanel({
       </div>
       
       <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">{/* Space for content */}
+
+      <TemplateSelector settings={settings} onSettingsChange={onSettingsChange} />
 
       {/* Virtual background - MOVED TO TOP */}
       <Card className="mb-6">

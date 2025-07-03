@@ -91,6 +91,7 @@ export interface Translations {
   cameraPopup: string
   advancedOptions: string
   addNote: string
+  templates: string
   
   // Sidebar
   hideSidebar: string
@@ -199,6 +200,7 @@ export const translations: Record<Language, Translations> = {
     cameraPopup: 'Camera Popup',
     advancedOptions: 'Advanced options',
     addNote: 'Add Note',
+    templates: 'Templates',
     
     // Sidebar
     hideSidebar: 'Hide sidebar (Tab)',
@@ -306,6 +308,7 @@ export const translations: Record<Language, Translations> = {
     cameraPopup: 'Pop-up da Câmera',
     advancedOptions: 'Opções avançadas',
     addNote: 'Adicionar nota',
+    templates: 'Modelos',
     
     // Sidebar
     hideSidebar: 'Ocultar barra lateral (Tab)',
