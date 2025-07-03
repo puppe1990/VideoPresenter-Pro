@@ -1312,6 +1312,20 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
                 </Badge>
               </div>
             )}
+
+            {settings.quackMode && (
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="duck absolute text-3xl"
+                    style={{ top: `${i * 20 + 10}%`, animationDelay: `${i * 1.5}s` }}
+                  >
+                    🦆
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

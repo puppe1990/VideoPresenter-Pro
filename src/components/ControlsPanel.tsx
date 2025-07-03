@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import clsx from 'clsx'
 
 interface ControlsPanelProps {
@@ -865,6 +866,20 @@ export default function ControlsPanel({
             <Camera className="mr-2 h-4 w-4" />
             {mounted ? t.cameraPopup : 'Camera Popup'}
           </Button>
+
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">{mounted ? t.quackMode : 'Quack Mode'}</Label>
+            <Switch
+              checked={settings.quackMode}
+              onCheckedChange={(value) =>
+                onSettingsChange({
+                  ...settings,
+                  quackMode: value,
+                  color: value ? '#facc15' : settings.color,
+                })
+              }
+            />
+          </div>
 
           <Button variant="ghost" size="sm" className="text-sm w-full justify-start">
             <Settings className="mr-2 h-4 w-4" />

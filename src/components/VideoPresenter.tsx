@@ -18,6 +18,7 @@ export interface PresenterSettings {
   size: 'small' | 'medium' | 'large' | 'xlarge'
   position: { x: number; y: number }
   isDragging: boolean
+  quackMode: boolean
 }
 
 export type RecordingSource = 'camera' | 'screen' | 'both'
@@ -45,6 +46,7 @@ export default function VideoPresenter() {
     size: 'medium',
     position: { x: 16, y: 16 },
     isDragging: false,
+    quackMode: false,
   })
   const [isPictureInPicture, setIsPictureInPicture] = useState(false)
   const [isSidebarVisible, setIsSidebarVisible] = useState(true)
