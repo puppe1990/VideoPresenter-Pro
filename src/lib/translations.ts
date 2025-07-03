@@ -50,6 +50,7 @@ export interface Translations {
   exportFormat: string
   download: string
   recordAgain: string
+  edit: string
   converting: string
   conversionProgress: string
   
@@ -158,6 +159,7 @@ export const translations: Record<Language, Translations> = {
     exportFormat: 'Export Format:',
     download: 'Download',
     recordAgain: 'Record Again',
+    edit: 'Edit',
     converting: 'Converting to',
     conversionProgress: 'This may take a few moments...',
     
@@ -265,6 +267,7 @@ export const translations: Record<Language, Translations> = {
     exportFormat: 'Formato de Exportação:',
     download: 'Baixar',
     recordAgain: 'Gravar Novamente',
+    edit: 'Editar',
     converting: 'Convertendo para',
     conversionProgress: 'Isso pode levar alguns momentos...',
     

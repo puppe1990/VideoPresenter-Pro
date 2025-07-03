@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import VideoCanvas, { type VideoCanvasHandle } from './VideoCanvas'
 import ControlsPanel from './ControlsPanel'
+import VideoEditor from './VideoEditor'
 import TopBar from './TopBar'
 import Teleprompter from './Teleprompter'
 import { videoExporter, type ExportFormat, type ConversionProgress } from '@/lib/videoConverter'
@@ -36,6 +37,7 @@ export default function VideoPresenter() {
   const [exportFormat, setExportFormat] = useState<ExportFormat>('webm')
   const [isConverting, setIsConverting] = useState(false)
   const [conversionProgress, setConversionProgress] = useState<ConversionProgress | null>(null)
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [settings, setSettings] = useState<PresenterSettings>({
     backgroundType: 'visible',
     shape: 'rectangle',
@@ -534,6 +536,16 @@ export default function VideoPresenter() {
     setRecordingDuration(0)
   }
 
+  const handleSaveEdits = (blob: Blob) => {
+    if (downloadUrl) {
+      URL.revokeObjectURL(downloadUrl)
+    }
+    const url = URL.createObjectURL(blob)
+    setDownloadUrl(url)
+    setRecordedMimeType('video/webm')
+    setIsEditorOpen(false)
+  }
+
   const handlePictureInPicture = async () => {
     try {
       if (videoRef.current) {
@@ -906,6 +918,7 @@ export default function VideoPresenter() {
               downloadUrl={downloadUrl}
               onDownloadRecording={downloadRecording}
               onClearRecording={clearRecording}
+              onEditRecording={() => setIsEditorOpen(true)}
               recordedMimeType={recordedMimeType}
               onPictureInPicture={handlePictureInPicture}
               onToggleTeleprompter={handleToggleTeleprompter}
@@ -926,6 +939,10 @@ export default function VideoPresenter() {
         onToggleVisibility={handleToggleTeleprompter}
         isRecording={isRecording}
       />
+
+      {isEditorOpen && downloadUrl && (
+        <VideoEditor videoUrl={downloadUrl} onClose={() => setIsEditorOpen(false)} onSave={handleSaveEdits} />
+      )}
     </div>
   )
-} 
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { PresenterSettings, RecordingSource } from './VideoPresenter'
-import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, FileText, Hexagon, Diamond, Heart, Star, Upload, X } from 'lucide-react'
+import { Eye, EyeOff, Square, Circle, CornerUpRight, Settings, Maximize2, RotateCcw, Video, Download, Type, Camera, FileVideo, FileText, Hexagon, Diamond, Heart, Star, Upload, X, Scissors } from 'lucide-react'
 import { useRef, useEffect } from 'react'
 import { useTranslation } from '@/lib/useTranslation'
 import { type ExportFormat, type ConversionProgress, videoExporter } from '@/lib/videoConverter'
@@ -25,6 +25,7 @@ interface ControlsPanelProps {
   downloadUrl: string | null
   onDownloadRecording: (format?: ExportFormat) => void
   onClearRecording?: () => void
+  onEditRecording: () => void
   recordedMimeType?: string
   onPictureInPicture: () => void
   onToggleTeleprompter: () => void
@@ -42,12 +43,13 @@ export default function ControlsPanel({
   isRecording, 
   recordingSource, 
   onRecordingSourceChange, 
-  onStartRecording, 
-  onStopRecording, 
-  recordingDuration, 
-  downloadUrl, 
+  onStartRecording,
+  onStopRecording,
+  recordingDuration,
+  downloadUrl,
   onDownloadRecording,
   onClearRecording,
+  onEditRecording,
   recordedMimeType,
   onPictureInPicture,
   onToggleTeleprompter,
@@ -500,7 +502,7 @@ export default function ControlsPanel({
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <Button
                     onClick={() => onDownloadRecording()}
                     variant="default"
@@ -509,6 +511,15 @@ export default function ControlsPanel({
                   >
                     <Download className="h-3 w-3 mr-1" />
                     {mounted ? t.download : 'Download'} {videoExporter.getFormatInfo(exportFormat).name}
+                  </Button>
+                  <Button
+                    onClick={onEditRecording}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <Scissors className='h-3 w-3 mr-1' />
+                    {mounted ? t.edit : 'Edit'}
                   </Button>
                   {onClearRecording && (
                     <Button

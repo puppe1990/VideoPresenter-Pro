@@ -12,6 +12,7 @@ A professional video presentation and recording application built with Next.js, 
 - **High-Quality Output**: MP4/WebM export with configurable bitrates
 - **Real-Time Timer**: Live recording duration display
 - **One-Click Download**: Instant video file download after recording
+- **Built-in Editor**: Trim, crop, and overlay text without leaving the app
 
 ### 🎨 Video Customization
 - **Drag & Drop Positioning**: Move video anywhere on the canvas
@@ -33,6 +34,7 @@ A professional video presentation and recording application built with Next.js, 
 - **Boundary Constraints**: Video stays within canvas bounds
 - **Position Reset**: One-click return to center
 - **Smooth Animations**: CSS transitions for professional feel
+- **Basic Editing**: Trim, crop, and overlay content before downloading
 
 ## 🚀 Getting Started
 
