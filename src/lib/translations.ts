@@ -52,6 +52,8 @@ export interface Translations {
   recordAgain: string
   converting: string
   conversionProgress: string
+  uploadDrive: string
+  uploadDropbox: string
   
   // Picture in Picture
   stayVisible: string
@@ -160,6 +162,8 @@ export const translations: Record<Language, Translations> = {
     recordAgain: 'Record Again',
     converting: 'Converting to',
     conversionProgress: 'This may take a few moments...',
+    uploadDrive: 'Upload to Drive',
+    uploadDropbox: 'Upload to Dropbox',
     
     // Picture in Picture
     stayVisible: 'Stay Visible',
@@ -267,6 +271,8 @@ export const translations: Record<Language, Translations> = {
     recordAgain: 'Gravar Novamente',
     converting: 'Convertendo para',
     conversionProgress: 'Isso pode levar alguns momentos...',
+    uploadDrive: 'Enviar para o Drive',
+    uploadDropbox: 'Enviar para o Dropbox',
     
     // Picture in Picture
     stayVisible: 'Manter Visível',

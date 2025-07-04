@@ -12,6 +12,7 @@ A professional video presentation and recording application built with Next.js, 
 - **High-Quality Output**: MP4/WebM export with configurable bitrates
 - **Real-Time Timer**: Live recording duration display
 - **One-Click Download**: Instant video file download after recording
+- **Cloud Upload**: Save recordings directly to Google Drive or Dropbox
 
 ### 🎨 Video Customization
 - **Drag & Drop Positioning**: Move video anywhere on the canvas
@@ -87,6 +88,7 @@ npm run dev
 4. **Start Recording**: Click the red record button
 5. **Drag Video**: Click and drag the video box to reposition
 6. **Stop & Download**: Stop recording and download your video
+7. **Upload to Cloud**: Use the Drive or Dropbox buttons to save online
 
 ## 🔧 Configuration
 

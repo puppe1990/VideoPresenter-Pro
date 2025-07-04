@@ -26,6 +26,8 @@ interface ControlsPanelProps {
   onDownloadRecording: (format?: ExportFormat) => void
   onClearRecording?: () => void
   recordedMimeType?: string
+  onUploadDrive: () => void
+  onUploadDropbox: () => void
   onPictureInPicture: () => void
   onToggleTeleprompter: () => void
   onToggleCameraPopup: () => void
@@ -49,6 +51,8 @@ export default function ControlsPanel({
   onDownloadRecording,
   onClearRecording,
   recordedMimeType,
+  onUploadDrive,
+  onUploadDropbox,
   onPictureInPicture,
   onToggleTeleprompter,
   onToggleCameraPopup,
@@ -517,10 +521,30 @@ export default function ControlsPanel({
                       size="sm"
                       className="text-xs"
                     >
-                                              <Video className="h-3 w-3 mr-1" />
-                        {mounted ? t.recordAgain : 'Record Again'}
+                      <Video className="h-3 w-3 mr-1" />
+                      {mounted ? t.recordAgain : 'Record Again'}
                     </Button>
                   )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <Button
+                    onClick={onUploadDrive}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    {mounted ? t.uploadDrive : 'Upload to Drive'}
+                  </Button>
+                  <Button
+                    onClick={onUploadDropbox}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    {mounted ? t.uploadDropbox : 'Upload to Dropbox'}
+                  </Button>
                 </div>
               </div>
             )}
