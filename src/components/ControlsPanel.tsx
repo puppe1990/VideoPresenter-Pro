@@ -28,6 +28,7 @@ interface ControlsPanelProps {
   recordedMimeType?: string
   onPictureInPicture: () => void
   onToggleTeleprompter: () => void
+  onToggleCaptions: () => void
   onToggleCameraPopup: () => void
   onAddNote: () => void
   exportFormat: ExportFormat
@@ -51,6 +52,7 @@ export default function ControlsPanel({
   recordedMimeType,
   onPictureInPicture,
   onToggleTeleprompter,
+  onToggleCaptions,
   onToggleCameraPopup,
   onAddNote,
   exportFormat,
@@ -846,6 +848,15 @@ export default function ControlsPanel({
           >
             <Type className="mr-2 h-4 w-4" />
             {mounted ? t.teleprompter : 'Teleprompter'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-sm w-full justify-start"
+            onClick={onToggleCaptions}
+          >
+            <Video className="mr-2 h-4 w-4" />
+            {mounted ? t.captions : 'Captions'}
           </Button>
           <Button
             variant="ghost"

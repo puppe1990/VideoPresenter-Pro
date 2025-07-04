@@ -88,6 +88,7 @@ export interface Translations {
   // Additional Settings
   additionalSettings: string
   teleprompter: string
+  captions: string
   cameraPopup: string
   advancedOptions: string
   addNote: string
@@ -196,6 +197,7 @@ export const translations: Record<Language, Translations> = {
     // Additional Settings
     additionalSettings: 'Additional settings',
     teleprompter: 'Teleprompter',
+    captions: 'Captions',
     cameraPopup: 'Camera Popup',
     advancedOptions: 'Advanced options',
     addNote: 'Add Note',
@@ -303,6 +305,7 @@ export const translations: Record<Language, Translations> = {
     // Additional Settings
     additionalSettings: 'Configurações adicionais',
     teleprompter: 'Teleprompter',
+    captions: 'Legendas',
     cameraPopup: 'Pop-up da Câmera',
     advancedOptions: 'Opções avançadas',
     addNote: 'Adicionar nota',
