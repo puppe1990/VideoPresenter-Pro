@@ -32,6 +32,7 @@ export default function VideoPresenter() {
   const [recordingSource, setRecordingSource] = useState<RecordingSource>('camera')
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null)
   const [isTeleprompterVisible, setIsTeleprompterVisible] = useState(false)
+  const [teleprompterRemoteCommand, setTeleprompterRemoteCommand] = useState<string | null>(null)
   const [isCameraPopupOpen, setIsCameraPopupOpen] = useState(false)
   const [exportFormat, setExportFormat] = useState<ExportFormat>('webm')
   const [isConverting, setIsConverting] = useState(false)
@@ -176,7 +177,7 @@ export default function VideoPresenter() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Intentionally empty - only cleanup on unmount, not on state changes
 
-  const getScreenStream = async () => {
+  const getScreenStream = useCallback(async () => {
     try {
       console.log('🖥️ Requesting screen capture...')
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
@@ -216,9 +217,9 @@ export default function VideoPresenter() {
         }
         throw error
       }
-  }
+  }, [handleStopRecording, isRecording, recordingSource])
 
-  const combineStreams = (cameraStream: MediaStream, screenStream: MediaStream) => {
+  const combineStreams = useCallback((cameraStream: MediaStream, screenStream: MediaStream) => {
     console.log('🔄 Combining camera and screen streams...')
     
     // Create a new MediaStream that combines both streams
@@ -251,9 +252,9 @@ export default function VideoPresenter() {
     
     console.log(`✅ Combined stream created with ${combinedStream.getTracks().length} total tracks`)
     return combinedStream
-  }
+  }, [])
 
-  const handleStartRecording = async () => {
+  const handleStartRecording = useCallback(async () => {
     console.log('🚀 START RECORDING FUNCTION CALLED')
     console.log('📊 Current state:', { 
       recordingSource, 
@@ -434,9 +435,9 @@ export default function VideoPresenter() {
       alert(`❌ Recording failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setIsRecording(false)
     }
-  }
+  }, [recordingSource, isRecording, getScreenStream, combineStreams])
 
-  const handleStopRecording = () => {
+  const handleStopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       try {
         console.log('🛑 User requested stop recording...')
@@ -471,7 +472,7 @@ export default function VideoPresenter() {
     } else {
       console.log('⚠️ Stop recording called but not currently recording')
     }
-  }
+  }, [isRecording, screenStream])
 
   const downloadRecording = async (format?: ExportFormat) => {
     if (!downloadUrl) return
@@ -650,9 +651,9 @@ export default function VideoPresenter() {
     }
   }
 
-  const handleToggleTeleprompter = () => {
-    setIsTeleprompterVisible(!isTeleprompterVisible)
-  }
+  const handleToggleTeleprompter = useCallback(() => {
+    setIsTeleprompterVisible(prev => !prev)
+  }, [])
 
   const handleToggleCameraPopup = () => {
     if (isCameraPopupOpen) {
@@ -847,6 +848,38 @@ export default function VideoPresenter() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [handleToggleSidebar])
 
+  // Poll remote commands
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/control')
+        const data = await res.json()
+        if (data.command) {
+          switch (data.command) {
+            case 'startRecording':
+              handleStartRecording()
+              break
+            case 'stopRecording':
+              handleStopRecording()
+              break
+            case 'toggleTeleprompter':
+              handleToggleTeleprompter()
+              break
+            case 'teleprompterPlay':
+            case 'teleprompterPause':
+            case 'teleprompterUp':
+            case 'teleprompterDown':
+              setTeleprompterRemoteCommand(data.command)
+              break
+          }
+        }
+      } catch (err) {
+        console.error('Remote command error', err)
+      }
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [isRecording, isTeleprompterVisible, handleStartRecording, handleStopRecording, handleToggleTeleprompter])
+
 
 
   return (
@@ -925,6 +958,8 @@ export default function VideoPresenter() {
         isVisible={isTeleprompterVisible}
         onToggleVisibility={handleToggleTeleprompter}
         isRecording={isRecording}
+        remoteCommand={teleprompterRemoteCommand}
+        onRemoteCommandHandled={() => setTeleprompterRemoteCommand(null)}
       />
     </div>
   )
