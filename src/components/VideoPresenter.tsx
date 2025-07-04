@@ -6,6 +6,7 @@ import ControlsPanel from './ControlsPanel'
 import TopBar from './TopBar'
 import Teleprompter from './Teleprompter'
 import { videoExporter, type ExportFormat, type ConversionProgress } from '@/lib/videoConverter'
+import { uploadToGoogleDrive, uploadToDropbox } from '@/lib/cloudUploader'
 import { useTranslation } from '@/lib/useTranslation'
 
 
@@ -534,6 +535,34 @@ export default function VideoPresenter() {
     setRecordingDuration(0)
   }
 
+  const uploadRecordingToDrive = async () => {
+    if (!downloadUrl) return
+    const token = prompt('Google Drive access token')
+    if (!token) return
+    try {
+      const blob = await fetch(downloadUrl).then(r => r.blob())
+      const filename = `video-presentation-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.${videoExporter.getFormatInfo(exportFormat).extension}`
+      await uploadToGoogleDrive(blob, filename, token)
+      alert('Uploaded to Drive!')
+    } catch (error) {
+      alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  const uploadRecordingToDropbox = async () => {
+    if (!downloadUrl) return
+    const token = prompt('Dropbox access token')
+    if (!token) return
+    try {
+      const blob = await fetch(downloadUrl).then(r => r.blob())
+      const filename = `video-presentation-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.${videoExporter.getFormatInfo(exportFormat).extension}`
+      await uploadToDropbox(blob, filename, token)
+      alert('Uploaded to Dropbox!')
+    } catch (error) {
+      alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
   const handlePictureInPicture = async () => {
     try {
       if (videoRef.current) {
@@ -906,6 +935,8 @@ export default function VideoPresenter() {
               downloadUrl={downloadUrl}
               onDownloadRecording={downloadRecording}
               onClearRecording={clearRecording}
+              onUploadDrive={uploadRecordingToDrive}
+              onUploadDropbox={uploadRecordingToDropbox}
               recordedMimeType={recordedMimeType}
               onPictureInPicture={handlePictureInPicture}
               onToggleTeleprompter={handleToggleTeleprompter}
