@@ -29,6 +29,7 @@ interface ControlsPanelProps {
   onPictureInPicture: () => void
   onToggleTeleprompter: () => void
   onToggleCameraPopup: () => void
+  onToggleVirtualCamera: () => void
   onAddNote: () => void
   exportFormat: ExportFormat
   onExportFormatChange: (format: ExportFormat) => void
@@ -52,6 +53,7 @@ export default function ControlsPanel({
   onPictureInPicture,
   onToggleTeleprompter,
   onToggleCameraPopup,
+  onToggleVirtualCamera,
   onAddNote,
   exportFormat,
   onExportFormatChange,
@@ -864,6 +866,15 @@ export default function ControlsPanel({
           >
             <Camera className="mr-2 h-4 w-4" />
             {mounted ? t.cameraPopup : 'Camera Popup'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-sm w-full justify-start"
+            onClick={onToggleVirtualCamera}
+          >
+            <Video className="mr-2 h-4 w-4" />
+            {mounted ? t.virtualCamera : 'Virtual Camera'}
           </Button>
 
           <Button variant="ghost" size="sm" className="text-sm w-full justify-start">

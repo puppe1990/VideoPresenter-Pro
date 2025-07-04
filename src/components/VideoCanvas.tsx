@@ -10,6 +10,7 @@ import DocumentViewer from './DocumentViewer'
 
 export interface VideoCanvasHandle {
   addNote: () => void
+  getCanvasStream: () => MediaStream | null
 }
 
 interface VideoCanvasProps {
@@ -536,7 +537,10 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
     setIsVideoSelected(false)
   }, [boardItems, zoomLevel])
 
-  useImperativeHandle(ref, () => ({ addNote }))
+  useImperativeHandle(ref, () => ({
+    addNote,
+    getCanvasStream: () => canvasRef.current ? canvasRef.current.captureStream(30) : null
+  }))
 
   // Video resize handler
   const handleVideoResizeMouseDown = useCallback((e: React.MouseEvent, handle: string) => {

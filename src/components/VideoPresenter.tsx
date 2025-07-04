@@ -33,6 +33,7 @@ export default function VideoPresenter() {
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null)
   const [isTeleprompterVisible, setIsTeleprompterVisible] = useState(false)
   const [isCameraPopupOpen, setIsCameraPopupOpen] = useState(false)
+  const [isVirtualCameraOpen, setIsVirtualCameraOpen] = useState(false)
   const [exportFormat, setExportFormat] = useState<ExportFormat>('webm')
   const [isConverting, setIsConverting] = useState(false)
   const [conversionProgress, setConversionProgress] = useState<ConversionProgress | null>(null)
@@ -55,6 +56,7 @@ export default function VideoPresenter() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const cameraPopupRef = useRef<Window | null>(null)
+  const virtualCameraPopupRef = useRef<Window | null>(null)
 
   useEffect(() => {
     // Initialize camera only once
@@ -171,6 +173,13 @@ export default function VideoPresenter() {
       
       if (downloadUrl) {
         URL.revokeObjectURL(downloadUrl)
+      }
+
+      if (cameraPopupRef.current) {
+        cameraPopupRef.current.close()
+      }
+      if (virtualCameraPopupRef.current) {
+        virtualCameraPopupRef.current.close()
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -668,6 +677,18 @@ export default function VideoPresenter() {
     }
   }
 
+  const handleToggleVirtualCamera = () => {
+    if (isVirtualCameraOpen) {
+      if (virtualCameraPopupRef.current) {
+        virtualCameraPopupRef.current.close()
+        virtualCameraPopupRef.current = null
+      }
+      setIsVirtualCameraOpen(false)
+    } else {
+      openVirtualCameraPopup()
+    }
+  }
+
   const handleToggleSidebar = useCallback(() => {
     setIsSidebarVisible(!isSidebarVisible)
   }, [isSidebarVisible])
@@ -813,6 +834,66 @@ export default function VideoPresenter() {
     }
   }
 
+  const openVirtualCameraPopup = () => {
+    const popup = window.open(
+      '',
+      'virtual-camera-popup',
+      'width=640,height=480,left=120,top=120,toolbar=no,menubar=no,scrollbars=no,resizable=yes'
+    )
+
+    if (popup) {
+      virtualCameraPopupRef.current = popup
+      setIsVirtualCameraOpen(true)
+
+      popup.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Virtual Camera</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background: #000;
+              overflow: hidden;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+            }
+            video {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+          </style>
+        </head>
+        <body>
+          <video id="virtual-video" autoplay playsinline muted></video>
+        </body>
+        </html>
+      `)
+      popup.document.close()
+
+      const popupVideo = popup.document.getElementById('virtual-video') as HTMLVideoElement
+      const canvasStream = videoCanvasRef.current?.getCanvasStream()
+      if (popupVideo && canvasStream) {
+        if (streamRef.current) {
+          streamRef.current.getAudioTracks().forEach(track => canvasStream.addTrack(track))
+        }
+        popupVideo.srcObject = canvasStream
+      }
+
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          setIsVirtualCameraOpen(false)
+          virtualCameraPopupRef.current = null
+          clearInterval(checkClosed)
+        }
+      }, 1000)
+    }
+  }
+
   // Update popup video stream when it changes
   useEffect(() => {
     if (cameraPopupRef.current && streamRef.current) {
@@ -822,6 +903,19 @@ export default function VideoPresenter() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (virtualCameraPopupRef.current && isVirtualCameraOpen) {
+      const popupVideo = virtualCameraPopupRef.current.document.getElementById('virtual-video') as HTMLVideoElement
+      const canvasStream = videoCanvasRef.current?.getCanvasStream()
+      if (popupVideo && canvasStream) {
+        if (streamRef.current) {
+          streamRef.current.getAudioTracks().forEach(track => canvasStream.addTrack(track))
+        }
+        popupVideo.srcObject = canvasStream
+      }
+    }
+  }, [isVirtualCameraOpen])
 
   // Update recording indicator in popup
   useEffect(() => {
@@ -910,6 +1004,7 @@ export default function VideoPresenter() {
               onPictureInPicture={handlePictureInPicture}
               onToggleTeleprompter={handleToggleTeleprompter}
               onToggleCameraPopup={handleToggleCameraPopup}
+              onToggleVirtualCamera={handleToggleVirtualCamera}
               onAddNote={handleAddNote}
               exportFormat={exportFormat}
               onExportFormatChange={setExportFormat}

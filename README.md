@@ -33,6 +33,7 @@ A professional video presentation and recording application built with Next.js, 
 - **Boundary Constraints**: Video stays within canvas bounds
 - **Position Reset**: One-click return to center
 - **Smooth Animations**: CSS transitions for professional feel
+- **Virtual Camera Output**: Present your feed as a virtual webcam
 
 ## 🚀 Getting Started
 
