@@ -34,6 +34,15 @@ interface ControlsPanelProps {
   onExportFormatChange: (format: ExportFormat) => void
   isConverting: boolean
   conversionProgress: ConversionProgress | null
+
+  // Live Streaming
+  isStreaming: boolean
+  streamUrl: string
+  streamKey: string
+  onStreamUrlChange: (url: string) => void
+  onStreamKeyChange: (key: string) => void
+  onStartStreaming: () => void
+  onStopStreaming: () => void
 }
 
 export default function ControlsPanel({ 
@@ -56,7 +65,14 @@ export default function ControlsPanel({
   exportFormat,
   onExportFormatChange,
   isConverting,
-  conversionProgress
+  conversionProgress,
+  isStreaming,
+  streamUrl,
+  streamKey,
+  onStreamUrlChange,
+  onStreamKeyChange,
+  onStartStreaming,
+  onStopStreaming
 }: ControlsPanelProps) {
   const { t, mounted } = useTranslation()
   const bgInputRef = useRef<HTMLInputElement>(null)
@@ -569,11 +585,60 @@ export default function ControlsPanel({
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                 <rect x="8" y="8" width="8" height="6" rx="1" ry="1"/>
               </svg>
-              {mounted ? t.pictureInPicture : 'Picture-in-Picture'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          {mounted ? t.pictureInPicture : 'Picture-in-Picture'}
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+
+  {/* Live Streaming */}
+  <Card className="mb-6">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-sm flex items-center gap-2">
+        <Upload className="h-4 w-4" />
+        {mounted ? t.liveStreaming : 'Live Streaming'}
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-2">
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">{mounted ? t.streamUrl : 'Stream URL'}</Label>
+        <input
+          type="text"
+          value={streamUrl}
+          onChange={e => onStreamUrlChange(e.target.value)}
+          className="w-full rounded border px-2 py-1 text-xs bg-background"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">{mounted ? t.streamKey : 'Stream Key'}</Label>
+        <input
+          type="text"
+          value={streamKey}
+          onChange={e => onStreamKeyChange(e.target.value)}
+          className="w-full rounded border px-2 py-1 text-xs bg-background"
+        />
+      </div>
+      <div>
+        {!isStreaming ? (
+          <Button onClick={onStartStreaming} size="sm" className="w-full text-xs">
+            <Upload className="h-3 w-3 mr-1" />
+            {mounted ? t.startStreaming : 'Start Streaming'}
+          </Button>
+        ) : (
+          <Button onClick={onStopStreaming} size="sm" variant="destructive" className="w-full text-xs">
+            <X className="h-3 w-3 mr-1" />
+            {mounted ? t.stopStreaming : 'Stop Streaming'}
+          </Button>
+        )}
+      </div>
+      {isStreaming && (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+          <span>{mounted ? t.streamingActive : 'Streaming'}</span>
+        </div>
+      )}
+    </CardContent>
+  </Card>
 
       {/* Real background */}
       <Card className="mb-6">

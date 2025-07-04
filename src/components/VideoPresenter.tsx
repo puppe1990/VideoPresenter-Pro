@@ -36,6 +36,10 @@ export default function VideoPresenter() {
   const [exportFormat, setExportFormat] = useState<ExportFormat>('webm')
   const [isConverting, setIsConverting] = useState(false)
   const [conversionProgress, setConversionProgress] = useState<ConversionProgress | null>(null)
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [streamUrl, setStreamUrl] = useState('')
+  const [streamKey, setStreamKey] = useState('')
+  const streamIdRef = useRef<string>('')
   const [settings, setSettings] = useState<PresenterSettings>({
     backgroundType: 'visible',
     shape: 'rectangle',
@@ -534,6 +538,96 @@ export default function VideoPresenter() {
     setRecordingDuration(0)
   }
 
+  const handleStartStreaming = async () => {
+    if (isStreaming) return
+    try {
+      let recordingStream: MediaStream | null = null
+
+      switch (recordingSource) {
+        case 'camera':
+          if (!streamRef.current) {
+            alert('Camera not available.')
+            return
+          }
+          recordingStream = streamRef.current
+          break
+        case 'screen':
+          try {
+            recordingStream = await getScreenStream()
+          } catch {
+            alert('Screen capture failed.')
+            return
+          }
+          break
+        case 'both':
+          if (!streamRef.current) {
+            alert('Camera not available.')
+            return
+          }
+          try {
+            const screenBoth = await getScreenStream()
+            recordingStream = combineStreams(streamRef.current, screenBoth)
+          } catch {
+            alert('Screen capture failed. Recording camera only.')
+            recordingStream = streamRef.current
+          }
+          break
+      }
+
+      if (!recordingStream) return
+
+      const bestFormat = videoExporter.getBestRecordingFormat()
+      const options: MediaRecorderOptions = { mimeType: bestFormat.mimeType }
+
+      const mediaRecorder = new MediaRecorder(recordingStream, options)
+      mediaRecorderRef.current = mediaRecorder
+
+      streamIdRef.current = crypto.randomUUID()
+      await fetch(`/api/stream?action=start&id=${streamIdRef.current}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rtmpUrl: `${streamUrl}/${streamKey}` })
+      })
+
+      mediaRecorder.ondataavailable = async (e) => {
+        if (e.data.size > 0) {
+          await fetch(`/api/stream?action=chunk&id=${streamIdRef.current}`, {
+            method: 'POST',
+            body: e.data
+          })
+        }
+      }
+
+      mediaRecorder.start(1000)
+      setIsStreaming(true)
+      setIsRecording(true)
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1)
+      }, 1000)
+    } catch (err) {
+      console.error('Streaming error', err)
+    }
+  }
+
+  const handleStopStreaming = async () => {
+    if (!isStreaming) return
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop()
+    }
+    await fetch(`/api/stream?action=stop&id=${streamIdRef.current}`, { method: 'POST' })
+    setIsStreaming(false)
+    setIsRecording(false)
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current)
+      recordingTimerRef.current = null
+    }
+    if (screenStream) {
+      screenStream.getTracks().forEach(t => t.stop())
+      setScreenStream(null)
+    }
+  }
+
   const handlePictureInPicture = async () => {
     try {
       if (videoRef.current) {
@@ -915,6 +1009,13 @@ export default function VideoPresenter() {
               onExportFormatChange={setExportFormat}
               isConverting={isConverting}
               conversionProgress={conversionProgress}
+              isStreaming={isStreaming}
+              streamUrl={streamUrl}
+              streamKey={streamKey}
+              onStreamUrlChange={setStreamUrl}
+              onStreamKeyChange={setStreamKey}
+              onStartStreaming={handleStartStreaming}
+              onStopStreaming={handleStopStreaming}
             />
           </div>
         )}
