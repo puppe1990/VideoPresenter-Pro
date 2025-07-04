@@ -24,9 +24,11 @@ interface TeleprompterProps {
   isVisible: boolean
   onToggleVisibility: () => void
   isRecording?: boolean
+  remoteCommand?: string | null
+  onRemoteCommandHandled?: () => void
 }
 
-export default function Teleprompter({ isVisible, onToggleVisibility, isRecording = false }: TeleprompterProps) {
+export default function Teleprompter({ isVisible, onToggleVisibility, isRecording = false, remoteCommand, onRemoteCommandHandled }: TeleprompterProps) {
   const [text, setText] = useState(`Welcome to your video presentation!
 
 Today we'll be covering several important topics that will help you understand the key concepts we're discussing.
@@ -71,6 +73,26 @@ Thank you for watching, and let's begin!`)
   const lastTimestampRef = useRef<number>(0)
   const teleprompterRef = useRef<HTMLDivElement>(null)
   const popupWindowRef = useRef<Window | null>(null)
+
+  // Apply remote commands
+  useEffect(() => {
+    if (!remoteCommand) return
+    switch (remoteCommand) {
+      case 'teleprompterPlay':
+        startScrolling()
+        break
+      case 'teleprompterPause':
+        stopScrolling()
+        break
+      case 'teleprompterUp':
+        scrollUp()
+        break
+      case 'teleprompterDown':
+        scrollDown()
+        break
+    }
+    if (onRemoteCommandHandled) onRemoteCommandHandled()
+  }, [remoteCommand, onRemoteCommandHandled])
 
   const startScrolling = () => {
     if (!scrollContainerRef.current) return
