@@ -56,6 +56,14 @@ export interface Translations {
   // Picture in Picture
   stayVisible: string
   pictureInPicture: string
+
+  // Live Streaming
+  liveStreaming: string
+  streamUrl: string
+  streamKey: string
+  startStreaming: string
+  stopStreaming: string
+  streamingActive: string
   
   // Real Background
   realBackground: string
@@ -164,6 +172,14 @@ export const translations: Record<Language, Translations> = {
     // Picture in Picture
     stayVisible: 'Stay Visible',
     pictureInPicture: 'Picture-in-Picture',
+
+    // Live Streaming
+    liveStreaming: 'Live Streaming',
+    streamUrl: 'Stream URL',
+    streamKey: 'Stream Key',
+    startStreaming: 'Start Streaming',
+    stopStreaming: 'Stop Streaming',
+    streamingActive: 'Streaming',
     
     // Real Background
     realBackground: 'Real background',
@@ -271,6 +287,14 @@ export const translations: Record<Language, Translations> = {
     // Picture in Picture
     stayVisible: 'Manter Visível',
     pictureInPicture: 'Picture-in-Picture',
+
+    // Live Streaming
+    liveStreaming: 'Transmissão ao vivo',
+    streamUrl: 'URL de transmissão',
+    streamKey: 'Chave de transmissão',
+    startStreaming: 'Iniciar transmissão',
+    stopStreaming: 'Parar transmissão',
+    streamingActive: 'Transmitindo',
     
     // Real Background
     realBackground: 'Fundo real',
