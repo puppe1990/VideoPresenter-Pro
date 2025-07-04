@@ -7,6 +7,7 @@ import TopBar from './TopBar'
 import Teleprompter from './Teleprompter'
 import { videoExporter, type ExportFormat, type ConversionProgress } from '@/lib/videoConverter'
 import { useTranslation } from '@/lib/useTranslation'
+import useAutoSceneSwitch, { type SceneLayout } from '@/lib/useAutoSceneSwitch'
 
 
 export interface PresenterSettings {
@@ -48,6 +49,8 @@ export default function VideoPresenter() {
   })
   const [isPictureInPicture, setIsPictureInPicture] = useState(false)
   const [isSidebarVisible, setIsSidebarVisible] = useState(true)
+  const [autoSceneSwitch, setAutoSceneSwitch] = useState(false)
+  const [sceneLayout, setSceneLayout] = useState<SceneLayout>('screen')
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const videoCanvasRef = useRef<VideoCanvasHandle>(null)
@@ -55,6 +58,27 @@ export default function VideoPresenter() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const cameraPopupRef = useRef<Window | null>(null)
+
+  const detectedLayout = useAutoSceneSwitch({
+    enabled: autoSceneSwitch && isRecording,
+    videoElement: videoRef.current,
+    stream: streamRef.current
+  })
+
+  useEffect(() => {
+    if (autoSceneSwitch) {
+      setSceneLayout(detectedLayout)
+    }
+  }, [detectedLayout, autoSceneSwitch])
+
+  useEffect(() => {
+    if (!autoSceneSwitch) return
+    if (sceneLayout === 'presenter') {
+      setSettings(prev => ({ ...prev, size: 'xlarge', position: { x: 0, y: 0 } }))
+    } else {
+      setSettings(prev => ({ ...prev, size: 'small', position: { x: 16, y: 16 } }))
+    }
+  }, [sceneLayout, autoSceneSwitch])
 
   useEffect(() => {
     // Initialize camera only once
@@ -915,6 +939,8 @@ export default function VideoPresenter() {
               onExportFormatChange={setExportFormat}
               isConverting={isConverting}
               conversionProgress={conversionProgress}
+              autoSceneSwitch={autoSceneSwitch}
+              onAutoSceneSwitchChange={setAutoSceneSwitch}
             />
           </div>
         )}

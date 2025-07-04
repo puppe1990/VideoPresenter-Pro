@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import clsx from 'clsx'
 
 interface ControlsPanelProps {
@@ -34,6 +35,8 @@ interface ControlsPanelProps {
   onExportFormatChange: (format: ExportFormat) => void
   isConverting: boolean
   conversionProgress: ConversionProgress | null
+  autoSceneSwitch: boolean
+  onAutoSceneSwitchChange: (value: boolean) => void
 }
 
 export default function ControlsPanel({ 
@@ -56,7 +59,9 @@ export default function ControlsPanel({
   exportFormat,
   onExportFormatChange,
   isConverting,
-  conversionProgress
+  conversionProgress,
+  autoSceneSwitch,
+  onAutoSceneSwitchChange
 }: ControlsPanelProps) {
   const { t, mounted } = useTranslation()
   const bgInputRef = useRef<HTMLInputElement>(null)
@@ -865,6 +870,11 @@ export default function ControlsPanel({
             <Camera className="mr-2 h-4 w-4" />
             {mounted ? t.cameraPopup : 'Camera Popup'}
           </Button>
+
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">{mounted ? t.autoSceneSwitch : 'Auto scene switch'}</Label>
+            <Switch checked={autoSceneSwitch} onCheckedChange={onAutoSceneSwitchChange} />
+          </div>
 
           <Button variant="ghost" size="sm" className="text-sm w-full justify-start">
             <Settings className="mr-2 h-4 w-4" />
