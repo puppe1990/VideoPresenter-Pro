@@ -920,11 +920,12 @@ export default function VideoPresenter() {
         )}
       </div>
 
-      {/* Teleprompter - positioned outside the recording area */}
+      {/* Teleprompter */}
       <Teleprompter
         isVisible={isTeleprompterVisible}
         onToggleVisibility={handleToggleTeleprompter}
         isRecording={isRecording}
+        recordingSource={recordingSource}
       />
     </div>
   )
