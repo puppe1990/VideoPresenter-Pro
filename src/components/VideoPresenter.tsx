@@ -5,6 +5,7 @@ import VideoCanvas, { type VideoCanvasHandle } from './VideoCanvas'
 import ControlsPanel from './ControlsPanel'
 import TopBar from './TopBar'
 import Teleprompter from './Teleprompter'
+import CaptionsOverlay from './CaptionsOverlay'
 import { videoExporter, type ExportFormat, type ConversionProgress } from '@/lib/videoConverter'
 import { useTranslation } from '@/lib/useTranslation'
 
@@ -32,6 +33,7 @@ export default function VideoPresenter() {
   const [recordingSource, setRecordingSource] = useState<RecordingSource>('camera')
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null)
   const [isTeleprompterVisible, setIsTeleprompterVisible] = useState(false)
+  const [areCaptionsVisible, setAreCaptionsVisible] = useState(false)
   const [isCameraPopupOpen, setIsCameraPopupOpen] = useState(false)
   const [exportFormat, setExportFormat] = useState<ExportFormat>('webm')
   const [isConverting, setIsConverting] = useState(false)
@@ -654,6 +656,10 @@ export default function VideoPresenter() {
     setIsTeleprompterVisible(!isTeleprompterVisible)
   }
 
+  const handleToggleCaptions = () => {
+    setAreCaptionsVisible(!areCaptionsVisible)
+  }
+
   const handleToggleCameraPopup = () => {
     if (isCameraPopupOpen) {
       // Close popup
@@ -909,6 +915,7 @@ export default function VideoPresenter() {
               recordedMimeType={recordedMimeType}
               onPictureInPicture={handlePictureInPicture}
               onToggleTeleprompter={handleToggleTeleprompter}
+              onToggleCaptions={handleToggleCaptions}
               onToggleCameraPopup={handleToggleCameraPopup}
               onAddNote={handleAddNote}
               exportFormat={exportFormat}
@@ -926,6 +933,7 @@ export default function VideoPresenter() {
         onToggleVisibility={handleToggleTeleprompter}
         isRecording={isRecording}
       />
+      <CaptionsOverlay isVisible={areCaptionsVisible} />
     </div>
   )
-} 
+}
