@@ -33,6 +33,7 @@ A professional video presentation and recording application built with Next.js, 
 - **Boundary Constraints**: Video stays within canvas bounds
 - **Position Reset**: One-click return to center
 - **Smooth Animations**: CSS transitions for professional feel
+- **Multi-Presenter Collaboration**: Invite remote guests to join and appear in your presentation canvas
 
 ## 🚀 Getting Started
 

@@ -7,6 +7,8 @@ import TopBar from './TopBar'
 import Teleprompter from './Teleprompter'
 import { videoExporter, type ExportFormat, type ConversionProgress } from '@/lib/videoConverter'
 import { useTranslation } from '@/lib/useTranslation'
+import { useCollaboration } from '@/hooks/useCollaboration'
+import CollaborationPanel from './CollaborationPanel'
 
 
 export interface PresenterSettings {
@@ -48,6 +50,9 @@ export default function VideoPresenter() {
   })
   const [isPictureInPicture, setIsPictureInPicture] = useState(false)
   const [isSidebarVisible, setIsSidebarVisible] = useState(true)
+  const [isCollaborationOpen, setIsCollaborationOpen] = useState(false)
+
+  const { peerId, remoteParticipants, registerLocalStream, connectToPeer } = useCollaboration()
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const videoCanvasRef = useRef<VideoCanvasHandle>(null)
@@ -95,6 +100,7 @@ export default function VideoPresenter() {
         })
         
         streamRef.current = stream
+        registerLocalStream(stream)
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream
@@ -136,7 +142,7 @@ export default function VideoPresenter() {
       // Only cleanup on unmount, not on every state change
       console.log('🔄 Component cleanup triggered')
     }
-  }, []) // Remove dependencies to prevent re-initialization
+  }, [registerLocalStream])
 
   // Cleanup effect for unmount only
   useEffect(() => {
@@ -851,7 +857,7 @@ export default function VideoPresenter() {
 
   return (
     <div className="h-full flex flex-col bg-gray-900 overflow-hidden">
-      <TopBar />
+      <TopBar onToggleCollaboration={() => setIsCollaborationOpen(!isCollaborationOpen)} />
       
       <div className="flex-1 flex min-h-0">
         {/* Main video area */}
@@ -863,6 +869,7 @@ export default function VideoPresenter() {
             onSettingsChange={setSettings}
             isRecording={isRecording}
             isPictureInPicture={isPictureInPicture}
+            remoteParticipants={remoteParticipants}
           />
           
           {/* Sidebar toggle button - positioned near sidebar edge */}
@@ -926,6 +933,12 @@ export default function VideoPresenter() {
         onToggleVisibility={handleToggleTeleprompter}
         isRecording={isRecording}
       />
+
+      {isCollaborationOpen && (
+        <div className='absolute top-20 left-1/2 -translate-x-1/2 z-50'>
+          <CollaborationPanel peerId={peerId} connectToPeer={connectToPeer} />
+        </div>
+      )}
     </div>
   )
-} 
+}

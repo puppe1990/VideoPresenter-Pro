@@ -12,15 +12,18 @@ export interface VideoCanvasHandle {
   addNote: () => void
 }
 
+import { RemoteParticipant } from '@/hooks/useCollaboration'
+
 interface VideoCanvasProps {
   videoRef: React.RefObject<HTMLVideoElement | null>
   settings: PresenterSettings
   onSettingsChange: (settings: PresenterSettings) => void
   isRecording: boolean
   isPictureInPicture: boolean
+  remoteParticipants: RemoteParticipant[]
 }
 
-const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture }, ref) {
+const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture, remoteParticipants }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
@@ -1315,6 +1318,22 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
           </div>
         </div>
       </div>
+
+      {/* Remote Guests */}
+      {remoteParticipants.map((guest, index) => (
+        <video
+          key={guest.id}
+          className='absolute top-4 right-4 bg-black rounded-md w-32 h-24'
+          style={{ right: `${index * 136 + 16}px` }}
+          autoPlay
+          playsInline
+          ref={node => {
+            if (node && !node.srcObject) {
+              node.srcObject = guest.stream
+            }
+          }}
+        />
+      ))}
 
       {/* Board Items */}
       {boardItems.map((item) => {

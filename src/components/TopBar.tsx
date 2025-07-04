@@ -37,7 +37,7 @@ const VideoPresenterLogo = () => (
   </svg>
 )
 
-export default function TopBar() {
+export default function TopBar({ onToggleCollaboration }: { onToggleCollaboration: () => void }) {
   const { t, mounted } = useTranslation()
   
   return (
@@ -52,8 +52,8 @@ export default function TopBar() {
           
           <Separator orientation="vertical" className="h-6" />
           
-          <Button variant="ghost" size="icon" title="Users">
-            <Users className="h-4 w-4" />
+          <Button variant='ghost' size='icon' title='Collaboration' onClick={onToggleCollaboration}>
+            <Users className='h-4 w-4' />
           </Button>
           
           <Tooltip>
