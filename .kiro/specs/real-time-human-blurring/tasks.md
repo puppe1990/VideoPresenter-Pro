@@ -13,14 +13,14 @@
   - Write unit tests for detection service functionality
   - _Requirements: 1.1, 1.2, 4.2_
 
-- [ ] 3. Create blur processing engine
+- [-] 3. Create blur processing engine
   - Implement BlurProcessingEngine class for applying blur effects to detected regions
   - Create Canvas-based blur algorithm that uses detection masks
   - Add configurable blur intensity with real-time adjustment capability
   - Write unit tests for blur processing with mock image data
   - _Requirements: 1.2, 3.1, 3.2, 3.3_
 
-- [ ] 4. Build blur controller orchestration
+- [-] 4. Build blur controller orchestration
   - Create BlurController class that coordinates detection and processing
   - Implement frame processing pipeline with performance monitoring
   - Add enable/disable functionality with state management
