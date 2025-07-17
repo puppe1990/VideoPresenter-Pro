@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
+import { BlurControlsUI } from '@/components/blur/BlurControlsUI'
+import type { BlurStatus } from '@/lib/blur/types'
 import clsx from 'clsx'
 
 interface ControlsPanelProps {
@@ -32,6 +34,9 @@ interface ControlsPanelProps {
   onExportFormatChange: (format: ExportFormat) => void
   isConverting: boolean
   conversionProgress: ConversionProgress | null
+  blurStatus: BlurStatus
+  onBlurToggle: (enabled: boolean) => void
+  onBlurIntensityChange: (intensity: number) => void
 }
 
 export default function ControlsPanel({ 
@@ -53,7 +58,10 @@ export default function ControlsPanel({
   exportFormat,
   onExportFormatChange,
   isConverting,
-  conversionProgress
+  conversionProgress,
+  blurStatus,
+  onBlurToggle,
+  onBlurIntensityChange
 }: ControlsPanelProps) {
   const { t, mounted } = useTranslation()
   
@@ -503,6 +511,13 @@ export default function ControlsPanel({
           </div>
         </CardContent>
       </Card>
+
+      {/* Human Blurring Controls */}
+      <BlurControlsUI
+        status={blurStatus}
+        onToggle={onBlurToggle}
+        onIntensityChange={onBlurIntensityChange}
+      />
 
       {/* Real background */}
       <Card className="mb-6">

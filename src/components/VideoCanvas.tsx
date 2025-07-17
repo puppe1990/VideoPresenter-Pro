@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
@@ -16,9 +16,10 @@ interface VideoCanvasProps {
   onSettingsChange: (settings: PresenterSettings) => void
   isRecording: boolean
   isPictureInPicture: boolean
+  blurController?: BlurController
 }
 
-export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture }: VideoCanvasProps) {
+export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture, blurController }: VideoCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
@@ -747,7 +748,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
 
     let animationFrame: number
 
-    const drawFrame = () => {
+    const drawFrame = async () => {
       if (video.readyState < 2) { // HAVE_CURRENT_DATA
         animationFrame = requestAnimationFrame(drawFrame)
         return
@@ -797,13 +798,45 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         ctx.filter = 'none'
       }
 
-      // Draw video
-      if (settings.backgroundType !== 'hidden') {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      // Process frame through blur controller if available and enabled
+      if (blurController && settings.backgroundType !== 'hidden') {
+        try {
+          // Draw video to a temporary canvas to get ImageData
+          const tempCanvas = document.createElement('canvas')
+          tempCanvas.width = canvasWidth
+          tempCanvas.height = canvasHeight
+          const tempCtx = tempCanvas.getContext('2d')
+          
+          if (tempCtx) {
+            // Draw original video frame
+            tempCtx.drawImage(video, 0, 0, canvasWidth, canvasHeight)
+            
+            // Get ImageData for blur processing
+            const imageData = tempCtx.getImageData(0, 0, canvasWidth, canvasHeight)
+            
+            // Process frame through blur controller
+            const processedImageData = await blurController.processFrame(imageData)
+            
+            // Draw processed frame to main canvas
+            ctx.putImageData(processedImageData, 0, 0)
+          } else {
+            // Fallback: draw original video if temp canvas fails
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          }
+        } catch (error) {
+          console.error('Blur processing failed, falling back to original video:', error)
+          // Fallback: draw original video
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        }
       } else {
-        // For hidden background, just draw a solid color
-        ctx.fillStyle = settings.color
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        // Draw video normally when blur is disabled or background is hidden
+        if (settings.backgroundType !== 'hidden') {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        } else {
+          // For hidden background, just draw a solid color
+          ctx.fillStyle = settings.color
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+        }
       }
 
       animationFrame = requestAnimationFrame(drawFrame)
