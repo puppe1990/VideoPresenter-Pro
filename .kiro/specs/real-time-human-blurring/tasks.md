@@ -6,7 +6,7 @@
   - Set up TypeScript interfaces and types for the blur system
   - _Requirements: 1.1, 4.1_
 
-- [ ] 2. Implement human detection service
+- [x] 2. Implement human detection service
   - Create HumanDetectionService class with TensorFlow.js BodyPix integration
   - Implement model loading and initialization with error handling
   - Add human detection method that processes ImageData and returns detection masks
@@ -20,7 +20,7 @@
   - Write unit tests for blur processing with mock image data
   - _Requirements: 1.2, 3.1, 3.2, 3.3_
 
-- [-] 4. Build blur controller orchestration
+- [ ] 4. Build blur controller orchestration
   - Create BlurController class that coordinates detection and processing
   - Implement frame processing pipeline with performance monitoring
   - Add enable/disable functionality with state management
@@ -52,7 +52,7 @@
   - Write performance tests to validate FPS and processing time requirements
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [-] 8. Create comprehensive test coverage
+- [ ] 8. Create comprehensive test coverage
   - Write end-to-end tests for complete blur functionality workflow
   - Add visual regression tests for blur effect quality
   - Create performance benchmark tests for different device capabilities
