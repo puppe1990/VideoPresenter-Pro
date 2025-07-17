@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import DocumentViewer from './DocumentViewer'
+import { BlurController } from '@/lib/blur/BlurController'
+import type { BlurStatus } from '@/lib/blur/types'
 
 interface VideoCanvasProps {
   videoRef: React.RefObject<HTMLVideoElement | null>

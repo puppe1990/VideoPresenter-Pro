@@ -18,7 +18,7 @@ export interface BlurProcessingEngine {
   applyBlur(
     originalFrame: ImageData, 
     mask: ImageData, 
-    intensity: number
+    intensity?: number
   ): ImageData;
   setBlurIntensity(intensity: number): void;
 }

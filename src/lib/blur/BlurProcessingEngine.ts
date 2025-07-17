@@ -30,7 +30,7 @@ export class BlurProcessingEngine implements IBlurProcessingEngine {
   /**
    * Apply blur effect to detected human regions in the frame
    */
-  applyBlur(originalFrame: ImageData, mask: ImageData, intensity: number): ImageData {
+  applyBlur(originalFrame: ImageData, mask: ImageData, intensity?: number): ImageData {
     try {
       // Validate inputs
       if (!originalFrame || !mask) {
@@ -51,8 +51,11 @@ export class BlurProcessingEngine implements IBlurProcessingEngine {
       this.canvas.width = originalFrame.width;
       this.canvas.height = originalFrame.height;
 
+      // Use provided intensity or fall back to stored intensity
+      const effectiveIntensity = intensity !== undefined ? intensity : this.blurIntensity;
+      
       // Create blurred version of the original frame
-      const blurredFrame = this.createBlurredFrame(originalFrame, intensity);
+      const blurredFrame = this.createBlurredFrame(originalFrame, effectiveIntensity);
       
       // Composite original and blurred frames using the mask
       return this.compositeMaskedFrames(originalFrame, blurredFrame, mask);

@@ -98,8 +98,18 @@ describe('BlurProcessingEngine', () => {
       ]), 2, 2));
     });
 
-    it('should apply blur effect successfully', () => {
+    it('should apply blur effect successfully with explicit intensity', () => {
       const result = engine.applyBlur(mockImageData, mockMaskData, 50);
+      
+      expect(result).toBeInstanceOf(ImageData);
+      expect(result.width).toBe(2);
+      expect(result.height).toBe(2);
+      expect(mockContext.putImageData).toHaveBeenCalledWith(mockImageData, 0, 0);
+    });
+
+    it('should apply blur effect using stored intensity when not provided', () => {
+      engine.setBlurIntensity(75);
+      const result = engine.applyBlur(mockImageData, mockMaskData);
       
       expect(result).toBeInstanceOf(ImageData);
       expect(result.width).toBe(2);
@@ -192,6 +202,19 @@ describe('BlurProcessingEngine', () => {
 
   describe('performance considerations', () => {
     it('should handle large image data efficiently', () => {
+      // Reset all mocks completely for this test
+      vi.clearAllMocks();
+      
+      // Create fresh mock context without any previous implementations
+      const freshMockContext = {
+        putImageData: vi.fn(),
+        getImageData: vi.fn(),
+        drawImage: vi.fn(),
+        filter: 'none'
+      };
+      
+      mockCanvas.getContext.mockReturnValue(freshMockContext);
+      
       // Create larger mock data (100x100 pixels)
       const largeImageData = new ImageData(100, 100);
       const largeMaskData = new ImageData(100, 100);
@@ -206,10 +229,14 @@ describe('BlurProcessingEngine', () => {
         largeMaskData.data[i + 3] = i % 8 === 0 ? 255 : 0; // Sparse detection
       }
 
-      mockContext.getImageData.mockReturnValue(largeImageData);
+      // Create a fresh engine instance for this test
+      const testEngine = new BlurProcessingEngine();
+      
+      // Mock getImageData to return the large image data
+      freshMockContext.getImageData.mockReturnValue(largeImageData);
 
       const startTime = performance.now();
-      const result = engine.applyBlur(largeImageData, largeMaskData, 50);
+      const result = testEngine.applyBlur(largeImageData, largeMaskData, 50);
       const endTime = performance.now();
 
       expect(result).toBeInstanceOf(ImageData);
