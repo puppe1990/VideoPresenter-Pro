@@ -32,7 +32,12 @@ class DetectionWorker {
   private model: bodyPix.BodyPix | null = null;
   private isInitialized = false;
 
-  async initialize(config: WorkerMessage['data']['config']): Promise<void> {
+  async initialize(config?: {
+    architecture: 'MobileNetV1' | 'ResNet50';
+    outputStride: number;
+    multiplier: number;
+    quantBytes: number;
+  }): Promise<void> {
     if (this.isInitialized) {
       return;
     }

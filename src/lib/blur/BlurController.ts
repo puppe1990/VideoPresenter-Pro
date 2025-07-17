@@ -37,6 +37,13 @@ export class BlurController implements IBlurController {
   private fallbackMode: boolean = false;
   private consecutiveSlowFrames: number = 0;
   
+  // Frame skipping logic
+  private targetFPS: number = BLUR_CONSTANTS.TARGET_FPS;
+  private frameSkipCount: number = 0;
+  private skipFrameThreshold: number = 2; // Skip every N frames when performance is poor
+  private lastProcessedFrame: ImageData | null = null;
+  private frameSkipEnabled: boolean = false;
+  
   // Constants for performance monitoring
   private static readonly MAX_PROCESSING_TIMES_HISTORY = 30;
   private static readonly SLOW_FRAME_THRESHOLD = 3;
@@ -119,7 +126,7 @@ export class BlurController implements IBlurController {
   }
 
   /**
-   * Process a single frame through the blur pipeline
+   * Process a single frame through the blur pipeline with frame skipping optimization
    */
   async processFrame(frame: ImageData): Promise<ImageData> {
     // Return original frame if disabled
@@ -129,6 +136,17 @@ export class BlurController implements IBlurController {
 
     // Prevent concurrent processing
     if (this.isProcessing) {
+      // Return last processed frame if available, otherwise original
+      return this.lastProcessedFrame || frame;
+    }
+
+    // Check if we should skip this frame for performance
+    if (this.shouldSkipFrame()) {
+      this.frameSkipCount++;
+      // Return last processed frame with blur applied if available
+      if (this.lastProcessedFrame) {
+        return this.applyLastKnownBlur(frame);
+      }
       return frame;
     }
 
@@ -136,13 +154,6 @@ export class BlurController implements IBlurController {
     const startTime = performance.now();
 
     try {
-      // In fallback mode, skip detection periodically to maintain performance
-      if (this.fallbackMode && this.frameCount % 3 !== 0) {
-        this.frameCount++;
-        this.isProcessing = false;
-        return frame;
-      }
-
       // Perform human detection
       const detectionResult = await this.detectionService.detectHumans(frame);
       
@@ -152,6 +163,9 @@ export class BlurController implements IBlurController {
         detectionResult.mask, 
         this.config.intensity
       );
+
+      // Store the processed frame for potential reuse
+      this.lastProcessedFrame = blurredFrame;
 
       // Update performance metrics
       const processingTime = performance.now() - startTime;
@@ -172,6 +186,47 @@ export class BlurController implements IBlurController {
       // Enable fallback mode on repeated failures
       this.enableFallbackMode();
       
+      return frame;
+    }
+  }
+
+  /**
+   * Determine if current frame should be skipped for performance
+   */
+  private shouldSkipFrame(): boolean {
+    // Don't skip if frame skipping is disabled
+    if (!this.frameSkipEnabled) {
+      return false;
+    }
+
+    // Skip frames based on current performance
+    const currentFPS = this.performanceMetrics.fps;
+    const targetFrameTime = 1000 / this.targetFPS;
+    const avgProcessingTime = this.performanceMetrics.averageProcessingTime;
+
+    // Enable frame skipping if processing is taking too long
+    if (avgProcessingTime > targetFrameTime * 0.8) {
+      return this.frameSkipCount % this.skipFrameThreshold === 0;
+    }
+
+    return false;
+  }
+
+  /**
+   * Apply blur effect using the last known detection mask
+   */
+  private applyLastKnownBlur(frame: ImageData): ImageData {
+    if (!this.lastProcessedFrame) {
+      return frame;
+    }
+
+    // Simple approach: apply a light blur to the entire frame
+    // This is a fallback when we don't have recent detection data
+    try {
+      const lightBlurIntensity = Math.max(10, this.config.intensity * 0.3);
+      return this.processingEngine.applyUniformBlur(frame, lightBlurIntensity);
+    } catch (error) {
+      console.warn('Failed to apply fallback blur:', error);
       return frame;
     }
   }
@@ -224,11 +279,18 @@ export class BlurController implements IBlurController {
    * Monitor performance and enable fallback mechanisms if needed
    */
   private handlePerformanceMonitoring(processingTime: number): void {
+    const targetFrameTime = 1000 / this.targetFPS;
+    
     // Check if processing time exceeds threshold
     if (processingTime > this.config.performanceThreshold) {
       this.consecutiveSlowFrames++;
       
-      // Enable fallback mode after consecutive slow frames
+      // Enable frame skipping first
+      if (this.consecutiveSlowFrames >= 2 && !this.frameSkipEnabled) {
+        this.enableFrameSkipping();
+      }
+      
+      // Enable fallback mode after more consecutive slow frames
       if (this.consecutiveSlowFrames >= BlurController.SLOW_FRAME_THRESHOLD) {
         this.enableFallbackMode();
       }
@@ -239,6 +301,32 @@ export class BlurController implements IBlurController {
       if (this.fallbackMode && this.frameCount % BlurController.FALLBACK_RECOVERY_FRAMES === 0) {
         this.disableFallbackMode();
       }
+      
+      // Disable frame skipping if performance is good
+      if (this.frameSkipEnabled && processingTime < targetFrameTime * 0.6) {
+        this.disableFrameSkipping();
+      }
+    }
+  }
+
+  /**
+   * Enable frame skipping to improve performance
+   */
+  private enableFrameSkipping(): void {
+    if (!this.frameSkipEnabled) {
+      this.frameSkipEnabled = true;
+      console.info('Frame skipping enabled to maintain performance');
+    }
+  }
+
+  /**
+   * Disable frame skipping when performance improves
+   */
+  private disableFrameSkipping(): void {
+    if (this.frameSkipEnabled) {
+      this.frameSkipEnabled = false;
+      this.frameSkipCount = 0;
+      console.info('Frame skipping disabled - performance recovered');
     }
   }
 
@@ -280,6 +368,46 @@ export class BlurController implements IBlurController {
     this.frameCount = 0;
     this.totalDetectionAccuracy = 0;
     this.consecutiveSlowFrames = 0;
+    this.frameSkipCount = 0;
+    this.frameSkipEnabled = false;
+    this.lastProcessedFrame = null;
+  }
+
+  /**
+   * Handle critical errors and attempt recovery
+   */
+  private async handleCriticalError(error: Error): Promise<void> {
+    console.error('Critical blur system error:', error);
+    
+    // Disable processing temporarily
+    const wasEnabled = this.isEnabled;
+    this.disable();
+    
+    try {
+      // Attempt to reinitialize the detection service
+      if (error instanceof BlurError && error.code === BlurErrorCode.MODEL_LOAD_FAILED) {
+        console.info('Attempting to recover from model loading failure...');
+        
+        // Dispose current service
+        this.detectionService.dispose();
+        
+        // Wait a bit before retry
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Try to reinitialize
+        await this.detectionService.initialize();
+        
+        // Re-enable if it was previously enabled
+        if (wasEnabled) {
+          await this.enable();
+        }
+        
+        console.info('Successfully recovered from critical error');
+      }
+    } catch (recoveryError) {
+      console.error('Failed to recover from critical error:', recoveryError);
+      // Stay disabled - manual intervention required
+    }
   }
 
   /**

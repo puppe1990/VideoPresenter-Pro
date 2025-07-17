@@ -11,6 +11,13 @@ export class BlurProcessingEngine implements IBlurProcessingEngine {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private blurIntensity: number = BLUR_CONSTANTS.DEFAULT_INTENSITY;
+  
+  // Memory management
+  private tempCanvas: HTMLCanvasElement;
+  private tempCtx: CanvasRenderingContext2D;
+  private maxCanvasSize: number = 1920 * 1080; // Max pixels to prevent memory issues
+  private lastCleanupTime: number = 0;
+  private cleanupInterval: number = 30000; // 30 seconds
 
   constructor() {
     // Create offscreen canvas for processing
@@ -25,6 +32,20 @@ export class BlurProcessingEngine implements IBlurProcessingEngine {
     }
     
     this.ctx = context;
+
+    // Create temporary canvas for intermediate processing
+    this.tempCanvas = document.createElement('canvas');
+    const tempContext = this.tempCanvas.getContext('2d');
+    
+    if (!tempContext) {
+      throw new BlurError(
+        'Failed to get temporary 2D rendering context',
+        BlurErrorCode.BROWSER_UNSUPPORTED
+      );
+    }
+    
+    this.tempCtx = tempContext;
+    this.lastCleanupTime = Date.now();
   }
 
   /**
@@ -47,9 +68,20 @@ export class BlurProcessingEngine implements IBlurProcessingEngine {
         );
       }
 
+      // Check canvas size limits to prevent memory issues
+      const totalPixels = originalFrame.width * originalFrame.height;
+      if (totalPixels > this.maxCanvasSize) {
+        throw new BlurError(
+          'Frame size exceeds maximum allowed dimensions',
+          BlurErrorCode.PROCESSING_FAILED
+        );
+      }
+
+      // Perform periodic memory cleanup
+      this.performMemoryCleanup();
+
       // Set up canvas dimensions
-      this.canvas.width = originalFrame.width;
-      this.canvas.height = originalFrame.height;
+      this.setupCanvas(originalFrame.width, originalFrame.height);
 
       // Use provided intensity or fall back to stored intensity
       const effectiveIntensity = intensity !== undefined ? intensity : this.blurIntensity;
@@ -81,6 +113,41 @@ export class BlurProcessingEngine implements IBlurProcessingEngine {
       BLUR_CONSTANTS.MIN_INTENSITY,
       Math.min(BLUR_CONSTANTS.MAX_INTENSITY, intensity)
     );
+  }
+
+  /**
+   * Apply uniform blur to entire frame (fallback method)
+   */
+  applyUniformBlur(frame: ImageData, intensity: number): ImageData {
+    try {
+      // Set up canvas dimensions
+      this.canvas.width = frame.width;
+      this.canvas.height = frame.height;
+
+      // Put original frame on canvas
+      this.ctx.putImageData(frame, 0, 0);
+      
+      // Calculate blur radius based on intensity
+      const blurRadius = Math.round((intensity / 100) * 15); // Lighter blur for uniform application
+      
+      if (blurRadius > 0) {
+        // Apply CSS filter blur
+        this.ctx.filter = `blur(${blurRadius}px)`;
+        
+        // Redraw the image with blur applied
+        this.ctx.drawImage(this.canvas, 0, 0);
+        
+        // Reset filter
+        this.ctx.filter = 'none';
+      }
+      
+      // Get the blurred image data
+      return this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+
+    } catch (error) {
+      console.warn('Failed to apply uniform blur, returning original frame:', error);
+      return frame;
+    }
   }
 
   /**
@@ -147,11 +214,68 @@ export class BlurProcessingEngine implements IBlurProcessingEngine {
   }
 
   /**
-   * Clean up resources
+   * Set up canvas dimensions with memory management
+   */
+  private setupCanvas(width: number, height: number): void {
+    // Only resize if dimensions changed to avoid unnecessary memory allocation
+    if (this.canvas.width !== width || this.canvas.height !== height) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+    }
+
+    if (this.tempCanvas.width !== width || this.tempCanvas.height !== height) {
+      this.tempCanvas.width = width;
+      this.tempCanvas.height = height;
+    }
+  }
+
+  /**
+   * Perform periodic memory cleanup
+   */
+  private performMemoryCleanup(): void {
+    const now = Date.now();
+    if (now - this.lastCleanupTime > this.cleanupInterval) {
+      try {
+        // Clear canvas contexts
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
+        
+        // Reset context state
+        this.ctx.filter = 'none';
+        this.tempCtx.filter = 'none';
+        
+        // Force garbage collection if available (Chrome DevTools)
+        if ('gc' in window && typeof (window as any).gc === 'function') {
+          (window as any).gc();
+        }
+        
+        this.lastCleanupTime = now;
+      } catch (error) {
+        console.warn('Memory cleanup failed:', error);
+      }
+    }
+  }
+
+  /**
+   * Clean up resources and handle memory management
    */
   dispose(): void {
-    // Canvas cleanup is handled by garbage collection
-    // Reset context state
-    this.ctx.filter = 'none';
+    try {
+      // Reset context state
+      this.ctx.filter = 'none';
+      this.tempCtx.filter = 'none';
+      
+      // Clear both canvases
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
+      
+      // Reset canvas dimensions to free memory
+      this.canvas.width = 0;
+      this.canvas.height = 0;
+      this.tempCanvas.width = 0;
+      this.tempCanvas.height = 0;
+    } catch (error) {
+      console.warn('Error during BlurProcessingEngine disposal:', error);
+    }
   }
 }
