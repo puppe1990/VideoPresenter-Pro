@@ -26,14 +26,14 @@ vi.mock('../HumanDetectionService', () => ({
 
 vi.mock('../BlurProcessingEngine', () => ({
   BlurProcessingEngine: vi.fn().mockImplementation(() => ({
-    applyBlur: vi.fn().mockImplementation((frame, _mask, _intensity) => {
+    applyBlur: vi.fn().mockImplementation((frame) => {
       if (shouldSimulateProcessingError) {
         throw new Error('Blur processing failed')
       }
       return new ImageData(frame.width, frame.height)
     }),
     setBlurIntensity: vi.fn(),
-    applyUniformBlur: vi.fn().mockImplementation((frame, _intensity) => {
+    applyUniformBlur: vi.fn().mockImplementation((frame) => {
       return new ImageData(frame.width, frame.height)
     }),
     dispose: vi.fn(),

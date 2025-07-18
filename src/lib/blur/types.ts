@@ -20,7 +20,9 @@ export interface BlurProcessingEngine {
     mask: ImageData, 
     intensity?: number
   ): ImageData;
+  applyUniformBlur(frame: ImageData, intensity: number): ImageData;
   setBlurIntensity(intensity: number): void;
+  dispose(): void;
 }
 
 export interface PerformanceMetrics {

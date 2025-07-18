@@ -256,6 +256,7 @@ export class WorkerManager {
    */
   dispose(): void {
     // Reject all pending requests
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const [id, request] of this.pendingRequests.entries()) {
       request.reject(new BlurError(
         'Worker manager disposed',

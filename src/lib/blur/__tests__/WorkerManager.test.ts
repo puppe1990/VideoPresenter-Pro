@@ -141,7 +141,7 @@ describe('WorkerManager', () => {
 
     it('should distribute load across workers', async () => {
       const requestCount = 6;
-      const promises = Array.from({ length: requestCount }, (_, i) => 
+      const promises = Array.from({ length: requestCount }, () => 
         workerManager.detectHumans(testImageData)
       );
 
@@ -192,7 +192,7 @@ describe('WorkerManager', () => {
       const shortTimeoutManager = new (class extends WorkerManager {
         constructor() {
           super(1);
-          (this as any).requestTimeout = 50; // 50ms timeout
+          (this as WorkerManager & { requestTimeout: number }).requestTimeout = 50; // 50ms timeout
         }
       })();
 
@@ -244,7 +244,7 @@ describe('WorkerManager', () => {
       const limitedManager = new (class extends WorkerManager {
         constructor() {
           super(1);
-          (this as any).maxQueueSize = 2; // Very small queue
+          (this as WorkerManager & { maxQueueSize: number }).maxQueueSize = 2; // Very small queue
         }
       })();
 

@@ -148,7 +148,7 @@ describe('Browser Compatibility Tests', () => {
     it('should detect Web Worker support correctly', () => {
       // Mock Worker availability
       global.Worker = class MockWorker {
-        constructor(scriptURL: string) {
+        constructor() {
           // Mock worker implementation
         }
         postMessage = vi.fn()

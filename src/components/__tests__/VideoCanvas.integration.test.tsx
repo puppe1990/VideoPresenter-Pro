@@ -50,7 +50,14 @@ global.requestAnimationFrame = vi.fn((cb) => {
 global.cancelAnimationFrame = vi.fn();
 
 describe('VideoCanvas Integration with Blur System', () => {
-  let mockBlurController: any;
+  let mockBlurController: {
+    processFrame: ReturnType<typeof vi.fn>;
+    getStatus: ReturnType<typeof vi.fn>;
+    enable: ReturnType<typeof vi.fn>;
+    disable: ReturnType<typeof vi.fn>;
+    setIntensity: ReturnType<typeof vi.fn>;
+    dispose: ReturnType<typeof vi.fn>;
+  };
   let mockVideoRef: React.RefObject<HTMLVideoElement>;
   let defaultSettings: PresenterSettings;
   let mockOnSettingsChange: ReturnType<typeof vi.fn>;

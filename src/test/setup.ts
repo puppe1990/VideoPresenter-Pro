@@ -18,7 +18,7 @@ global.ImageData = class ImageData {
       this.height = height || 1
     }
   }
-} as any
+} as unknown as typeof ImageData
 
 // Mock TensorFlow.js for testing
 global.HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
@@ -28,7 +28,7 @@ global.HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
     width: 1,
     height: 1
   }))
-})) as any
+})) as unknown as CanvasRenderingContext2D['getContext']
 
 // Mock performance.now for consistent timing in tests
 let performanceCounter = 0

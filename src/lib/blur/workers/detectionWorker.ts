@@ -49,7 +49,7 @@ class DetectionWorker {
       // Try WebGL first, fallback to CPU
       try {
         await tf.setBackend('webgl');
-      } catch (error) {
+      } catch {
         console.warn('WebGL not available in worker, using CPU backend');
         await tf.setBackend('cpu');
       }
@@ -57,9 +57,9 @@ class DetectionWorker {
       // Load BodyPix model with provided configuration
       this.model = await bodyPix.load({
         architecture: config?.architecture || 'MobileNetV1',
-        outputStride: config?.outputStride || 16,
-        multiplier: config?.multiplier || 0.75,
-        quantBytes: config?.quantBytes || 2
+        outputStride: (config?.outputStride || 16) as 8 | 16 | 32,
+        multiplier: (config?.multiplier || 0.75) as 0.5 | 0.75 | 1.0,
+        quantBytes: (config?.quantBytes || 2) as 1 | 2 | 4
       });
 
       this.isInitialized = true;
@@ -92,7 +92,7 @@ class DetectionWorker {
         ctx = canvas.getContext('2d')!;
       } else {
         // Fallback for browsers without OffscreenCanvas
-        canvas = new (self as any).HTMLCanvasElement();
+        canvas = new (self as unknown as { HTMLCanvasElement: typeof HTMLCanvasElement }).HTMLCanvasElement();
         canvas.width = imageData.width;
         canvas.height = imageData.height;
         ctx = canvas.getContext('2d')!;
@@ -106,7 +106,7 @@ class DetectionWorker {
       ctx.putImageData(imageData, 0, 0);
 
       // Perform segmentation with optimized settings for performance
-      const segmentation = await this.model.segmentPerson(canvas as any, {
+      const segmentation = await this.model.segmentPerson(canvas as HTMLCanvasElement | OffscreenCanvas, {
         flipHorizontal: false,
         internalResolution: 'low', // Use low resolution for better performance
         segmentationThreshold: 0.6,
@@ -170,7 +170,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
   const { id, type, data } = event.data;
   
   try {
-    let result: any;
+    let result: DetectionResult | { success: boolean };
 
     switch (type) {
       case 'INITIALIZE':
