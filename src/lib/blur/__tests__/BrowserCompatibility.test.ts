@@ -7,7 +7,7 @@ class BrowserCompatibilityChecker {
       const canvas = document.createElement('canvas')
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
       return !!gl
-    } catch (e) {
+    } catch {
       return false
     }
   }
@@ -17,7 +17,7 @@ class BrowserCompatibilityChecker {
       const canvas = document.createElement('canvas')
       const context = canvas.getContext && canvas.getContext('2d')
       return !!context
-    } catch (e) {
+    } catch {
       return false
     }
   }
@@ -30,7 +30,7 @@ class BrowserCompatibilityChecker {
     try {
       new ImageData(1, 1)
       return true
-    } catch (e) {
+    } catch {
       return false
     }
   }
@@ -40,7 +40,7 @@ class BrowserCompatibilityChecker {
       try {
         // In test environment, always return true for TensorFlow.js support
         resolve(true)
-      } catch (e) {
+      } catch {
         resolve(false)
       }
     })
@@ -61,13 +61,13 @@ class BrowserCompatibilityChecker {
     return capabilities
   }
 
-  static isBlurFeatureSupported(capabilities: any): boolean {
+  static isBlurFeatureSupported(capabilities: { canvas: boolean; imageData: boolean; tensorflowjs: boolean }): boolean {
     return capabilities.canvas && 
            capabilities.imageData && 
            capabilities.tensorflowjs
   }
 
-  static getRecommendedSettings(capabilities: any) {
+  static getRecommendedSettings(capabilities: { hardwareConcurrency: number; webgl: boolean; webWorkers: boolean }) {
     const settings = {
       useWebWorkers: capabilities.webWorkers,
       maxProcessingSize: { width: 640, height: 480 },
@@ -95,8 +95,8 @@ class BrowserCompatibilityChecker {
 }
 
 describe('Browser Compatibility Tests', () => {
-  let originalNavigator: any
-  let originalDocument: any
+  let originalNavigator: typeof navigator
+  let originalDocument: typeof document
 
   beforeEach(() => {
     // Store original objects
@@ -122,7 +122,7 @@ describe('Browser Compatibility Tests', () => {
         })
       }
       
-      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any)
+      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement)
       
       const hasWebGL = BrowserCompatibilityChecker.checkWebGLSupport()
       expect(hasWebGL).toBe(true)
@@ -138,7 +138,7 @@ describe('Browser Compatibility Tests', () => {
         })
       }
       
-      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any)
+      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement)
       
       const hasCanvas = BrowserCompatibilityChecker.checkCanvasSupport()
       expect(hasCanvas).toBe(true)
@@ -153,7 +153,7 @@ describe('Browser Compatibility Tests', () => {
         }
         postMessage = vi.fn()
         terminate = vi.fn()
-      } as any
+      } as unknown as typeof Worker
 
       const hasWebWorkers = BrowserCompatibilityChecker.checkWebWorkerSupport()
       expect(hasWebWorkers).toBe(true)
@@ -171,7 +171,7 @@ describe('Browser Compatibility Tests', () => {
         getContext: vi.fn().mockReturnValue(null)
       }
       
-      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any)
+      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement)
       
       const hasWebGL = BrowserCompatibilityChecker.checkWebGLSupport()
       expect(hasWebGL).toBe(false)
@@ -198,7 +198,7 @@ describe('Browser Compatibility Tests', () => {
           getImageData: vi.fn(),
         })
       }
-      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any)
+      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement)
 
       const capabilities = await BrowserCompatibilityChecker.getDeviceCapabilities()
       
@@ -226,7 +226,7 @@ describe('Browser Compatibility Tests', () => {
           getImageData: vi.fn(),
         })
       }
-      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any)
+      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement)
 
       const capabilities = await BrowserCompatibilityChecker.getDeviceCapabilities()
       
@@ -254,7 +254,7 @@ describe('Browser Compatibility Tests', () => {
           getImageData: vi.fn(),
         })
       }
-      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any)
+      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement)
 
       const capabilities = await BrowserCompatibilityChecker.getDeviceCapabilities()
       
@@ -300,7 +300,7 @@ describe('Browser Compatibility Tests', () => {
           return { putImageData: vi.fn(), getImageData: vi.fn() }
         })
       }
-      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any)
+      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement)
 
       const capabilities = await BrowserCompatibilityChecker.getDeviceCapabilities()
       const settings = BrowserCompatibilityChecker.getRecommendedSettings(capabilities)
@@ -320,7 +320,7 @@ describe('Browser Compatibility Tests', () => {
       const mockCanvas = {
         getContext: vi.fn().mockReturnValue(null)
       }
-      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any)
+      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement)
 
       const capabilities = await BrowserCompatibilityChecker.getDeviceCapabilities()
       const settings = BrowserCompatibilityChecker.getRecommendedSettings(capabilities)
@@ -332,12 +332,12 @@ describe('Browser Compatibility Tests', () => {
 
     it('should handle unsupported browsers gracefully', async () => {
       // Mock old browser without required features
-      global.ImageData = undefined as any
+      global.ImageData = undefined as unknown as typeof ImageData
       
       const mockCanvas = {
         getContext: vi.fn().mockReturnValue(null)
       }
-      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any)
+      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement)
 
       const capabilities = await BrowserCompatibilityChecker.getDeviceCapabilities()
       
@@ -358,7 +358,7 @@ describe('Browser Compatibility Tests', () => {
           return { putImageData: vi.fn(), getImageData: vi.fn() }
         })
       }
-      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any)
+      vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement)
 
       const capabilities = await BrowserCompatibilityChecker.getDeviceCapabilities()
       const settings = BrowserCompatibilityChecker.getRecommendedSettings(capabilities)

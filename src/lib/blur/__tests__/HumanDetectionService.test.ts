@@ -40,11 +40,11 @@ global.HTMLCanvasElement = class HTMLCanvasElement {
   height = 0
   getContext = vi.fn()
   remove = vi.fn()
-} as any
+} as Partial<HTMLCanvasElement>
 
 describe('HumanDetectionService', () => {
   let service: HumanDetectionService
-  let mockModel: any
+  let mockModel: { segmentPerson: ReturnType<typeof vi.fn>; dispose: ReturnType<typeof vi.fn> }
 
   beforeEach(() => {
     service = new HumanDetectionService()

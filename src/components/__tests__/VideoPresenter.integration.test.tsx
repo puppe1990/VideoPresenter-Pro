@@ -72,7 +72,15 @@ vi.mock('@/lib/videoConverter', () => ({
 }));
 
 describe('VideoPresenter Integration with Blur System', () => {
-  let mockBlurController: any;
+  let mockBlurController: {
+    processFrame: ReturnType<typeof vi.fn>;
+    getStatus: ReturnType<typeof vi.fn>;
+    enable: ReturnType<typeof vi.fn>;
+    disable: ReturnType<typeof vi.fn>;
+    setIntensity: ReturnType<typeof vi.fn>;
+    dispose: ReturnType<typeof vi.fn>;
+    updateConfig: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -94,7 +102,7 @@ describe('VideoPresenter Integration with Blur System', () => {
     };
 
     // Mock BlurController constructor
-    (BlurController as any).mockImplementation(() => mockBlurController);
+    (BlurController as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => mockBlurController);
   });
 
   afterEach(() => {

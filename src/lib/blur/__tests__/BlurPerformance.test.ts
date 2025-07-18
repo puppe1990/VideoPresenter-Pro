@@ -24,7 +24,7 @@ vi.mock('../HumanDetectionService', () => ({
 
 vi.mock('../BlurProcessingEngine', () => ({
   BlurProcessingEngine: vi.fn().mockImplementation(() => ({
-    applyBlur: vi.fn().mockImplementation((frame, mask, intensity) => {
+    applyBlur: vi.fn().mockImplementation((frame, _mask, _intensity) => {
       // Simulate processing time
       const start = performance.now()
       while (performance.now() - start < 5) {
@@ -33,7 +33,7 @@ vi.mock('../BlurProcessingEngine', () => ({
       return new ImageData(frame.width, frame.height)
     }),
     setBlurIntensity: vi.fn(),
-    applyUniformBlur: vi.fn().mockImplementation((frame, intensity) => {
+    applyUniformBlur: vi.fn().mockImplementation((frame, _intensity) => {
       return new ImageData(frame.width, frame.height)
     }),
     dispose: vi.fn(),
@@ -54,12 +54,12 @@ function getCurrentDeviceProcessingTime(): number {
 
 describe('Blur Performance Benchmark Tests', () => {
   let blurController: BlurController
-  let performanceMetrics: Array<{ fps: number; processingTime: number; memoryUsage: number }>
+  // let performanceMetrics: Array<{ fps: number; processingTime: number; memoryUsage: number }>
 
   beforeEach(async () => {
     blurController = new BlurController()
     await blurController.enable()
-    performanceMetrics = []
+    // performanceMetrics = []
     
     // Reset performance counter
     vi.mocked(performance.now).mockImplementation(() => Date.now())

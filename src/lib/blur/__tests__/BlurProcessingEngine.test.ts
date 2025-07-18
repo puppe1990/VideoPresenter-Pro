@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BlurProcessingEngine } from '../BlurProcessingEngine';
-import { BLUR_CONSTANTS, BlurError, BlurErrorCode } from '../types';
+import { BlurError, BlurErrorCode } from '../types';
 
 // Mock Canvas API
 const mockCanvas = {
@@ -118,12 +118,12 @@ describe('BlurProcessingEngine', () => {
     });
 
     it('should throw error for null original frame', () => {
-      expect(() => engine.applyBlur(null as any, mockMaskData, 50))
+      expect(() => engine.applyBlur(null as unknown as ImageData, mockMaskData, 50))
         .toThrow(BlurError);
     });
 
     it('should throw error for null mask', () => {
-      expect(() => engine.applyBlur(mockImageData, null as any, 50))
+      expect(() => engine.applyBlur(mockImageData, null as unknown as ImageData, 50))
         .toThrow(BlurError);
     });
 

@@ -13,7 +13,7 @@ global.Worker = class MockWorker {
   
   constructor() {}
   
-  postMessage(message: any) {
+  postMessage(message: { type: string; id: string; imageData?: ImageData }) {
     // Simulate different response times based on message type
     const delay = message.type === 'INITIALIZE' ? 100 : 25;
     
@@ -53,7 +53,7 @@ global.Worker = class MockWorker {
   }
   
   terminate() {}
-} as any;
+} as unknown as typeof Worker;
 
 describe('WorkerManager', () => {
   let workerManager: WorkerManager;
@@ -165,8 +165,8 @@ describe('WorkerManager', () => {
     it('should handle worker errors gracefully', async () => {
       // Mock worker to simulate error
       const mockWorker = {
-        onmessage: null as any,
-        onerror: null as any,
+        onmessage: null as ((event: MessageEvent) => void) | null,
+        onerror: null as ((event: ErrorEvent) => void) | null,
         postMessage: vi.fn(),
         terminate: vi.fn()
       };
@@ -206,7 +206,7 @@ describe('WorkerManager', () => {
         
         constructor() {}
         
-        postMessage(message: any) {
+        postMessage(message: { type: string; id: string }) {
           if (message.type === 'INITIALIZE') {
             // Initialize normally
             setTimeout(() => {
@@ -225,7 +225,7 @@ describe('WorkerManager', () => {
         }
         
         terminate() {}
-      } as any;
+      } as unknown as typeof Worker;
 
       try {
         await shortTimeoutManager.detectHumans(testImageData);

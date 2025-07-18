@@ -29,13 +29,13 @@ describe('BlurController', () => {
         processingTime: 25
       }),
       dispose: vi.fn()
-    } as any;
+    };
 
     mockProcessingEngine = {
       applyBlur: vi.fn().mockReturnValue(mockImageData),
       setBlurIntensity: vi.fn(),
       dispose: vi.fn()
-    } as any;
+    };
 
     // Mock constructors
     (HumanDetectionService as Mock).mockImplementation(() => mockDetectionService);
@@ -164,7 +164,7 @@ describe('BlurController', () => {
       const promise1 = blurController.processFrame(mockImageData);
       const promise2 = blurController.processFrame(mockImageData);
 
-      const [result1, result2] = await Promise.all([promise1, promise2]);
+      await Promise.all([promise1, promise2]);
       
       // One should be processed, one should return original
       expect(mockDetectionService.detectHumans).toHaveBeenCalledOnce();
