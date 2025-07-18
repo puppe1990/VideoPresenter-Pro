@@ -200,7 +200,6 @@ export class BlurController implements IBlurController {
     }
 
     // Skip frames based on current performance
-    const currentFPS = this.performanceMetrics.fps;
     const targetFrameTime = 1000 / this.targetFPS;
     const avgProcessingTime = this.performanceMetrics.averageProcessingTime;
 
@@ -417,7 +416,7 @@ export class BlurController implements IBlurController {
     // This is a simplified estimation
     // In a real implementation, you might use performance.memory if available
     if ('memory' in performance) {
-      return (performance as any).memory.usedJSHeapSize / 1024 / 1024; // MB
+      return (performance as Performance & { memory: { usedJSHeapSize: number } }).memory.usedJSHeapSize / 1024 / 1024; // MB
     }
     
     // Fallback estimation based on processing complexity

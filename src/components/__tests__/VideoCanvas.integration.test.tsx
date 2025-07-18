@@ -1,8 +1,8 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import VideoCanvas from '../VideoCanvas';
-import { BlurController } from '@/lib/blur/BlurController';
+// import { BlurController } from '@/lib/blur/BlurController';
 import type { PresenterSettings } from '../VideoPresenter';
 
 // Mock the blur controller

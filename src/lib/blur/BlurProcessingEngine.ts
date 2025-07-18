@@ -245,8 +245,8 @@ export class BlurProcessingEngine implements IBlurProcessingEngine {
         this.tempCtx.filter = 'none';
         
         // Force garbage collection if available (Chrome DevTools)
-        if ('gc' in window && typeof (window as any).gc === 'function') {
-          (window as any).gc();
+        if ('gc' in window && typeof (window as Window & { gc?: () => void }).gc === 'function') {
+          (window as Window & { gc: () => void }).gc();
         }
         
         this.lastCleanupTime = now;

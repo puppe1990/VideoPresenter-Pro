@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import DocumentViewer from './DocumentViewer'
 import { BlurController } from '@/lib/blur/BlurController'
-import type { BlurStatus } from '@/lib/blur/types'
+// import type { BlurStatus } from '@/lib/blur/types'
 
 export interface VideoCanvasHandle {
   addNote: () => void
@@ -910,7 +910,7 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
       video.removeEventListener('loadeddata', handleLoadedData)
       video.removeEventListener('canplay', handleLoadedData)
     }
-  }, [videoRef, settings])
+  }, [videoRef, settings, blurController])
 
   const getShapeClass = () => {
     const baseClasses = 'transition-all duration-500 shadow-lg'

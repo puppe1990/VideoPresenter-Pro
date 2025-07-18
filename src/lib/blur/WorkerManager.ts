@@ -200,7 +200,7 @@ export class WorkerManager {
   /**
    * Send message to worker and wait for response
    */
-  private async sendWorkerMessage(worker: Worker, message: WorkerMessage): Promise<any> {
+  private async sendWorkerMessage(worker: Worker, message: WorkerMessage): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         this.pendingRequests.delete(message.id);
