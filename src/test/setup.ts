@@ -28,7 +28,7 @@ global.HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
     width: 1,
     height: 1
   }))
-})) as unknown as CanvasRenderingContext2D['getContext']
+})) as unknown as HTMLCanvasElement['getContext']
 
 // Mock performance.now for consistent timing in tests
 let performanceCounter = 0

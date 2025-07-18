@@ -25,7 +25,7 @@ interface WorkerMessage {
 interface WorkerResponse {
   id: string;
   type: 'SUCCESS' | 'ERROR';
-  data?: DetectionResult | { message: string; code: BlurErrorCode };
+  data?: DetectionResult | { success: boolean } | { message: string; code: BlurErrorCode };
 }
 
 class DetectionWorker {
