@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import Image from 'next/image'
 import { PresenterSettings } from './VideoPresenter'
