@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import Image from 'next/image'
 import { PresenterSettings } from './VideoPresenter'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +9,10 @@ import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, ZoomIn, ZoomOut,
 import DocumentViewer from './DocumentViewer'
 import { BlurController } from '@/lib/blur/BlurController'
 import type { BlurStatus } from '@/lib/blur/types'
+
+export interface VideoCanvasHandle {
+  addNote: () => void
+}
 
 interface VideoCanvasProps {
   videoRef: React.RefObject<HTMLVideoElement | null>
@@ -19,7 +23,7 @@ interface VideoCanvasProps {
   blurController?: BlurController
 }
 
-export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture, blurController }: VideoCanvasProps) {
+const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture, blurController }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
@@ -28,6 +32,8 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   const [isDragOver, setIsDragOver] = useState(false)
   const [boardItems, setBoardItems] = useState<BoardItem[]>([])
   const [selectedItem, setSelectedItem] = useState<string | null>(null)
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isResizing, setIsResizing] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -43,10 +49,11 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const moveFrameRef = useRef<number | null>(null)
 
   interface BoardItem {
     id: string
-    type: 'image' | 'video' | 'text' | 'document'
+    type: 'image' | 'video' | 'document' | 'note'
     src?: string
     content?: string
     fileName?: string
@@ -340,6 +347,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
     e.preventDefault()
     e.stopPropagation()
     setSelectedItem(itemId)
+    setDraggingItemId(itemId)
     
     const item = boardItems.find(item => item.id === itemId)
     if (!item) return
@@ -381,15 +389,25 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         
         const clampedX = Math.max(minX, Math.min(newX, maxX))
         const clampedY = Math.max(minY, Math.min(newY, maxY))
-        
-        setBoardItems(prev => prev.map(prevItem => 
-          prevItem.id === itemId 
-            ? { ...prevItem, x: clampedX, y: clampedY }
-            : prevItem
-        ))
+
+        if (moveFrameRef.current) {
+          cancelAnimationFrame(moveFrameRef.current)
+        }
+        moveFrameRef.current = requestAnimationFrame(() => {
+          setBoardItems(prev => prev.map(prevItem =>
+            prevItem.id === itemId
+              ? { ...prevItem, x: clampedX, y: clampedY }
+              : prevItem
+          ))
+        })
       }
-      
+
       const handleMouseUp = () => {
+        if (moveFrameRef.current) {
+          cancelAnimationFrame(moveFrameRef.current)
+          moveFrameRef.current = null
+        }
+        setDraggingItemId(null)
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
       }
@@ -490,6 +508,38 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       setBoardItems(prev => [...prev, newItem])
     }
   }, [boardItems, zoomLevel])
+
+  const updateItemContent = useCallback((itemId: string, content: string) => {
+    setBoardItems(prev => prev.map(item => item.id === itemId ? { ...item, content } : item))
+  }, [])
+
+  const addNote = useCallback((x?: number, y?: number) => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    const boardWidth = rect ? (zoomLevel < 1 ? rect.width / zoomLevel : rect.width) : 800
+    const boardHeight = rect ? (zoomLevel < 1 ? rect.height / zoomLevel : rect.height) : 600
+
+    const posX = x !== undefined ? x : boardWidth / 2 - 100
+    const posY = y !== undefined ? y : boardHeight / 2 - 75
+
+    const newItem: BoardItem = {
+      id: `note-${Date.now()}-${Math.random()}`,
+      type: 'note',
+      content: 'New Note',
+      x: posX,
+      y: posY,
+      width: 200,
+      height: 150,
+      rotation: 0,
+      zIndex: boardItems.length + 1
+    }
+
+    setBoardItems(prev => [...prev, newItem])
+    setSelectedItem(newItem.id)
+    setEditingNoteId(newItem.id)
+    setIsVideoSelected(false)
+  }, [boardItems, zoomLevel])
+
+  useImperativeHandle(ref, () => ({ addNote }))
 
   // Video resize handler
   const handleVideoResizeMouseDown = useCallback((e: React.MouseEvent, handle: string) => {
@@ -617,11 +667,9 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }, [])
 
   const handleWheel = useCallback((e: WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault()
-      const zoomFactor = e.deltaY > 0 ? -0.1 : 0.1
-      setZoomLevel(prev => Math.max(0.1, Math.min(3, prev + zoomFactor)))
-    }
+    e.preventDefault()
+    const zoomFactor = e.deltaY > 0 ? -0.1 : 0.1
+    setZoomLevel(prev => Math.max(0.1, Math.min(3, prev + zoomFactor)))
   }, [])
 
   const handlePanStart = useCallback((e: React.MouseEvent) => {
@@ -886,9 +934,22 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }
 
   const getShapeStyle = () => {
+    const filterParts: string[] = []
+    if (settings.backgroundType === 'blurred') filterParts.push('blur(10px)')
+    switch (settings.videoFilter) {
+      case 'grayscale':
+        filterParts.push('grayscale(1)')
+        break
+      case 'sepia':
+        filterParts.push('sepia(1)')
+        break
+      case 'invert':
+        filterParts.push('invert(1)')
+        break
+    }
     const baseStyle = {
       border: `4px solid ${settings.color}`,
-      filter: settings.backgroundType === 'blurred' ? 'blur(10px)' : 'none',
+      filter: filterParts.join(' ') || 'none',
       minHeight: '200px',
       minWidth: '300px',
       ...(customVideoSize && {
@@ -973,7 +1034,7 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={`w-full h-full relative p-8 ${zoomLevel < 1 ? 'overflow-visible' : 'overflow-hidden'}`}
       style={getBackgroundStyle()}
@@ -981,6 +1042,14 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onMouseDown={handlePanStart}
+      onDoubleClick={(e) => {
+        if (e.target === containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect()
+          const x = (e.clientX - rect.left) / zoomLevel - 100
+          const y = (e.clientY - rect.top) / zoomLevel - 75
+          addNote(x, y)
+        }
+      }}
     >
       {/* Zoom Controls */}
       <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
@@ -1292,7 +1361,9 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
         return (
           <div
             key={item.id}
-            className={`absolute cursor-move select-none transition-all duration-200 ${
+            className={`absolute cursor-move select-none ${
+              draggingItemId === item.id ? '' : 'transition-all duration-200'
+            } ${
               selectedItem === item.id ? 'shadow-xl' : ''
             } ${zoomLevel < 0.5 ? 'hover:shadow-lg' : ''}`}
             style={{
@@ -1370,6 +1441,24 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
                 }
                 className="w-full h-full"
               />
+            ) : item.type === 'note' ? (
+              editingNoteId === item.id ? (
+                <textarea
+                  value={item.content || ''}
+                  onChange={(e) => updateItemContent(item.id, e.target.value)}
+                  onBlur={() => setEditingNoteId(null)}
+                  className="w-full h-full bg-yellow-200 rounded-lg shadow-lg p-2 text-black text-sm resize-none focus:outline-none"
+                  style={{ whiteSpace: 'pre-wrap' }}
+                  autoFocus
+                />
+              ) : (
+                <div
+                  className="w-full h-full bg-yellow-200 rounded-lg shadow-lg p-2 text-black text-sm whitespace-pre-wrap"
+                  onDoubleClick={() => setEditingNoteId(item.id)}
+                >
+                  {item.content}
+                </div>
+              )
             ) : (
               <div className="w-full h-full bg-white rounded-lg shadow-lg p-4 text-black">
                 {item.content || 'Text content'}
@@ -1488,4 +1577,6 @@ export default function VideoCanvas({ videoRef, settings, onSettingsChange, isRe
       </div>
     </div>
   )
-} 
+})
+
+export default VideoCanvas
