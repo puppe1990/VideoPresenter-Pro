@@ -89,13 +89,15 @@ class DetectionWorker {
 
       if (typeof OffscreenCanvas !== 'undefined') {
         canvas = new OffscreenCanvas(imageData.width, imageData.height);
-        ctx = canvas.getContext('2d')!;
+        const offCtx = (canvas as OffscreenCanvas).getContext('2d');
+        if (!offCtx) {
+          throw new Error('Failed to get OffscreenCanvas 2D context');
+        }
+        ctx = offCtx;
       } else {
-        // Fallback for browsers without OffscreenCanvas
-        canvas = new (self as unknown as { HTMLCanvasElement: typeof HTMLCanvasElement }).HTMLCanvasElement();
-        canvas.width = imageData.width;
-        canvas.height = imageData.height;
-        ctx = canvas.getContext('2d')!;
+        // Without OffscreenCanvas we cannot safely construct DOM canvas in worker.
+        // Propagate an explicit error so main thread can fall back to direct processing.
+        throw new Error('OffscreenCanvas not supported in this environment');
       }
 
       if (!ctx) {

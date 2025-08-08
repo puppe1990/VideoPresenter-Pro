@@ -193,20 +193,20 @@ export class BlurProcessingEngine implements IBlurProcessingEngine {
     for (let i = 0; i < originalData.length; i += 4) {
       // Get mask alpha value (assuming mask uses alpha channel for detection)
       const maskAlpha = maskData[i + 3] / 255;
-      
-      // Blend original and blurred pixels based on mask
-      if (maskAlpha > 0.1) { // Threshold for human detection
-        // Use blurred pixel for detected human regions
-        resultData[i] = blurredData[i];     // R
-        resultData[i + 1] = blurredData[i + 1]; // G
-        resultData[i + 2] = blurredData[i + 2]; // B
-        resultData[i + 3] = originalData[i + 3]; // A (preserve original alpha)
-      } else {
-        // Use original pixel for non-human regions
+
+      // We want to blur AROUND the body (background), keep the person sharp.
+      if (maskAlpha > 0.1) {
+        // Human pixel → keep original (sharp)
         resultData[i] = originalData[i];     // R
         resultData[i + 1] = originalData[i + 1]; // G
         resultData[i + 2] = originalData[i + 2]; // B
         resultData[i + 3] = originalData[i + 3]; // A
+      } else {
+        // Background pixel → use blurred
+        resultData[i] = blurredData[i];     // R
+        resultData[i + 1] = blurredData[i + 1]; // G
+        resultData[i + 2] = blurredData[i + 2]; // B
+        resultData[i + 3] = originalData[i + 3]; // A (preserve original alpha)
       }
     }
 

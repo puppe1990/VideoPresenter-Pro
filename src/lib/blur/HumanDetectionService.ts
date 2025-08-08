@@ -145,7 +145,17 @@ export class HumanDetectionService implements IHumanDetectionService {
     try {
       // Use worker-based detection if available
       if (this.workerManager) {
-        return await this.detectWithWorker(imageData);
+        try {
+          return await this.detectWithWorker(imageData);
+        } catch (workerErr) {
+          // If worker fails due to OffscreenCanvas or other limitations, try direct
+          console.warn('Worker detection failed, attempting direct detection...', workerErr);
+          // Ensure model is loaded if not already
+          if (!this.model) {
+            await this.initializeDirect();
+          }
+          return await this.detectDirect(imageData);
+        }
       }
 
       // Fallback to direct detection

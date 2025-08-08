@@ -1297,10 +1297,10 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
               style={getShapeStyle()}
             />
             
-            {/* Canvas for advanced effects (currently hidden while we debug) */}
+            {/* Canvas for processed output (drawn every frame) */}
             <canvas
               ref={canvasRef}
-              className="hidden"
+              className="absolute inset-0 z-20"
               style={getShapeStyle()}
             />
             
