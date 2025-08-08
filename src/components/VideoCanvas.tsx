@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import Image from 'next/image'
 import { PresenterSettings } from './VideoPresenter'
@@ -7,9 +8,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Move, Upload, FileImage, FileVideo, FileText, X, Copy, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import DocumentViewer from './DocumentViewer'
+import { BlurController } from '@/lib/blur/BlurController'
+// import type { BlurStatus } from '@/lib/blur/types'
 
 export interface VideoCanvasHandle {
   addNote: () => void
+  getProcessedCanvas: () => HTMLCanvasElement | null
 }
 
 interface VideoCanvasProps {
@@ -18,9 +22,10 @@ interface VideoCanvasProps {
   onSettingsChange: (settings: PresenterSettings) => void
   isRecording: boolean
   isPictureInPicture: boolean
+  blurController?: BlurController
 }
 
-const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture }, ref) {
+const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function VideoCanvas({ videoRef, settings, onSettingsChange, isRecording, isPictureInPicture, blurController }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
@@ -536,7 +541,10 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
     setIsVideoSelected(false)
   }, [boardItems, zoomLevel])
 
-  useImperativeHandle(ref, () => ({ addNote }))
+  useImperativeHandle(ref, () => ({ 
+    addNote,
+    getProcessedCanvas: () => canvasRef.current
+  }))
 
   // Video resize handler
   const handleVideoResizeMouseDown = useCallback((e: React.MouseEvent, handle: string) => {
@@ -793,7 +801,7 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
 
     let animationFrame: number
 
-    const drawFrame = () => {
+    const drawFrame = async () => {
       if (video.readyState < 2) { // HAVE_CURRENT_DATA
         animationFrame = requestAnimationFrame(drawFrame)
         return
@@ -843,13 +851,45 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
         ctx.filter = 'none'
       }
 
-      // Draw video
-      if (settings.backgroundType !== 'hidden') {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      // Process frame through blur controller if available and enabled
+      if (blurController && settings.backgroundType !== 'hidden') {
+        try {
+          // Draw video to a temporary canvas to get ImageData
+          const tempCanvas = document.createElement('canvas')
+          tempCanvas.width = canvasWidth
+          tempCanvas.height = canvasHeight
+          const tempCtx = tempCanvas.getContext('2d')
+          
+          if (tempCtx) {
+            // Draw original video frame
+            tempCtx.drawImage(video, 0, 0, canvasWidth, canvasHeight)
+            
+            // Get ImageData for blur processing
+            const imageData = tempCtx.getImageData(0, 0, canvasWidth, canvasHeight)
+            
+            // Process frame through blur controller
+            const processedImageData = await blurController.processFrame(imageData)
+            
+            // Draw processed frame to main canvas
+            ctx.putImageData(processedImageData, 0, 0)
+          } else {
+            // Fallback: draw original video if temp canvas fails
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          }
+        } catch (error) {
+          console.error('Blur processing failed, falling back to original video:', error)
+          // Fallback: draw original video
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        }
       } else {
-        // For hidden background, just draw a solid color
-        ctx.fillStyle = settings.color
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        // Draw video normally when blur is disabled or background is hidden
+        if (settings.backgroundType !== 'hidden') {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        } else {
+          // For hidden background, just draw a solid color
+          ctx.fillStyle = settings.color
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+        }
       }
 
       animationFrame = requestAnimationFrame(drawFrame)
@@ -875,7 +915,7 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
       video.removeEventListener('loadeddata', handleLoadedData)
       video.removeEventListener('canplay', handleLoadedData)
     }
-  }, [videoRef, settings])
+  }, [videoRef, settings, blurController])
 
   const getShapeClass = () => {
     const baseClasses = 'transition-all duration-500 shadow-lg'
@@ -1261,10 +1301,10 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
               style={getShapeStyle()}
             />
             
-            {/* Canvas for advanced effects (currently hidden while we debug) */}
+            {/* Canvas for processed output (drawn every frame) */}
             <canvas
               ref={canvasRef}
-              className="hidden"
+              className="absolute inset-0 z-20"
               style={getShapeStyle()}
             />
             

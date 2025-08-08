@@ -7,6 +7,8 @@ import TopBar from './TopBar'
 import Teleprompter from './Teleprompter'
 import { videoExporter, type ExportFormat, type ConversionProgress } from '@/lib/videoConverter'
 import { useTranslation } from '@/lib/useTranslation'
+import { BlurController } from '@/lib/blur/BlurController'
+import type { BlurStatus } from '@/lib/blur/types'
 
 
 export interface PresenterSettings {
@@ -48,6 +50,17 @@ export default function VideoPresenter() {
   })
   const [isPictureInPicture, setIsPictureInPicture] = useState(false)
   const [isSidebarVisible, setIsSidebarVisible] = useState(true)
+  const [blurStatus, setBlurStatus] = useState<BlurStatus>({
+    enabled: false,
+    intensity: 50,
+    isProcessing: false,
+    performance: {
+      fps: 0,
+      averageProcessingTime: 0,
+      detectionAccuracy: 0,
+      memoryUsage: 0
+    }
+  })
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const videoCanvasRef = useRef<VideoCanvasHandle>(null)
@@ -55,6 +68,7 @@ export default function VideoPresenter() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const cameraPopupRef = useRef<Window | null>(null)
+  const blurControllerRef = useRef<BlurController | null>(null)
 
   useEffect(() => {
     // Initialize camera only once
@@ -549,7 +563,20 @@ export default function VideoPresenter() {
         } else {
           const video = videoRef.current
           
-          // If it's not a circle, use simple PIP
+          // If processed canvas available, stream that into PiP so BodyPix effects appear
+          const processedCanvas = videoCanvasRef.current?.getProcessedCanvas?.()
+          if (processedCanvas) {
+            const pipVideo = document.createElement('video')
+            pipVideo.muted = true
+            pipVideo.playsInline = true
+            const stream = processedCanvas.captureStream(30)
+            pipVideo.srcObject = stream
+            await pipVideo.play()
+            await pipVideo.requestPictureInPicture()
+            return
+          }
+
+          // Fallback: If it's not a circle, use simple PIP of the raw video
           if (settings.shape !== 'circle') {
             await video.requestPictureInPicture()
             return
@@ -833,6 +860,66 @@ export default function VideoPresenter() {
     }
   }, [isRecording])
 
+  // Initialize blur controller
+  useEffect(() => {
+    if (!blurControllerRef.current) {
+      blurControllerRef.current = new BlurController({
+        enabled: false,
+        intensity: 50
+      })
+    }
+
+    return () => {
+      if (blurControllerRef.current) {
+        blurControllerRef.current.dispose()
+        blurControllerRef.current = null
+      }
+    }
+  }, [])
+
+  // Blur control handlers
+  const handleBlurToggle = useCallback(async (enabled: boolean) => {
+    if (!blurControllerRef.current) return
+
+    try {
+      if (enabled) {
+        await blurControllerRef.current.enable()
+      } else {
+        blurControllerRef.current.disable()
+      }
+      
+      // Update status
+      const newStatus = blurControllerRef.current.getStatus()
+      setBlurStatus(newStatus)
+    } catch (error) {
+      console.error('Failed to toggle blur:', error)
+      // Reset status on error
+      setBlurStatus(prev => ({ ...prev, enabled: false }))
+    }
+  }, [])
+
+  const handleBlurIntensityChange = useCallback((intensity: number) => {
+    if (!blurControllerRef.current) return
+
+    blurControllerRef.current.setIntensity(intensity)
+    const newStatus = blurControllerRef.current.getStatus()
+    setBlurStatus(newStatus)
+  }, [])
+
+  // Update blur status periodically when enabled
+  useEffect(() => {
+    if (!blurStatus.enabled || !blurControllerRef.current) return
+
+    const interval = setInterval(() => {
+      if (blurControllerRef.current) {
+        const newStatus = blurControllerRef.current.getStatus()
+        setBlurStatus(newStatus)
+      }
+    }, 1000) // Update every second
+
+    return () => clearInterval(interval)
+  }, [blurStatus.enabled])
+
   // Keyboard shortcut for toggling sidebar
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -863,6 +950,7 @@ export default function VideoPresenter() {
             onSettingsChange={setSettings}
             isRecording={isRecording}
             isPictureInPicture={isPictureInPicture}
+            blurController={blurControllerRef.current || undefined}
           />
           
           {/* Sidebar toggle button - positioned near sidebar edge */}
@@ -915,6 +1003,9 @@ export default function VideoPresenter() {
               onExportFormatChange={setExportFormat}
               isConverting={isConverting}
               conversionProgress={conversionProgress}
+              blurStatus={blurStatus}
+              onBlurToggle={handleBlurToggle}
+              onBlurIntensityChange={handleBlurIntensityChange}
             />
           </div>
         )}
