@@ -13,6 +13,7 @@ import { BlurController } from '@/lib/blur/BlurController'
 
 export interface VideoCanvasHandle {
   addNote: () => void
+  getProcessedCanvas: () => HTMLCanvasElement | null
 }
 
 interface VideoCanvasProps {
@@ -540,7 +541,10 @@ const VideoCanvas = forwardRef<VideoCanvasHandle, VideoCanvasProps>(function Vid
     setIsVideoSelected(false)
   }, [boardItems, zoomLevel])
 
-  useImperativeHandle(ref, () => ({ addNote }))
+  useImperativeHandle(ref, () => ({ 
+    addNote,
+    getProcessedCanvas: () => canvasRef.current
+  }))
 
   // Video resize handler
   const handleVideoResizeMouseDown = useCallback((e: React.MouseEvent, handle: string) => {

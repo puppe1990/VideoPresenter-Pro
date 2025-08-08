@@ -563,7 +563,20 @@ export default function VideoPresenter() {
         } else {
           const video = videoRef.current
           
-          // If it's not a circle, use simple PIP
+          // If processed canvas available, stream that into PiP so BodyPix effects appear
+          const processedCanvas = videoCanvasRef.current?.getProcessedCanvas?.()
+          if (processedCanvas) {
+            const pipVideo = document.createElement('video')
+            pipVideo.muted = true
+            pipVideo.playsInline = true
+            const stream = processedCanvas.captureStream(30)
+            pipVideo.srcObject = stream
+            await pipVideo.play()
+            await pipVideo.requestPictureInPicture()
+            return
+          }
+
+          // Fallback: If it's not a circle, use simple PIP of the raw video
           if (settings.shape !== 'circle') {
             await video.requestPictureInPicture()
             return
