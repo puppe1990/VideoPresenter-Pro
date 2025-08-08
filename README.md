@@ -7,32 +7,45 @@ A professional video presentation and recording application built with Next.js, 
 
 ## ✨ Features
 
-### 🎥 Video Recording
-- **Multi-Source Recording**: Record from camera, screen, or both simultaneously
-- **High-Quality Output**: MP4/WebM export with configurable bitrates
-- **Real-Time Timer**: Live recording duration display
-- **One-Click Download**: Instant video file download after recording
+### 🎥 Recording & Export
+- **Multi-Source Recording**: Camera, Screen, or Both (combined stream with system and mic audio)
+- **High-Quality Output**: WebM/MP4 recording with bitrate tuning
+- **Format Conversion**: Convert to WebM, MP4, or animated WebP in-browser with progress
+- **Real-Time Timer**: Live duration display and preview
+- **One-Click Download**: Instant file download
 
-### 🎨 Video Customization
-- **Drag & Drop Positioning**: Move video anywhere on the canvas
-- **Multiple Shapes**: Rectangle, circle, and rounded corner options
-- **Size Controls**: Small, medium, large, and x-large sizing
-- **Color Borders**: 6 professional color options
-- **Background Effects**: Visible, blurred, or hidden background modes
+### 🧠 Privacy & Effects
+- **Human Blurring (BodyPix)**: Real-time human detection and background blur with intensity control
+- **Performance-Aware Pipeline**: FPS, processing time, fallback and frame-skipping when needed
+- **Video Filters**: None, Grayscale, Sepia, Invert
+- **Background Modes**: Visible, Blurred, or Hidden (solid color)
+
+### 🎨 Presenter Customization
+- **Drag & Drop Positioning**: Place camera bubble anywhere on the board
+- **Advanced Shapes**: Rectangle, Circle, Rounded, Hexagon, Diamond, Heart, Star
+- **Sizes & Colors**: Small/Medium/Large/X-Large, with professional color borders
+- **Virtual Backgrounds**: Curated presets (tech, space, ocean, dark-pro, modern-office, forest, sunset, waves, city, warm, clean-white, soft-blur) + custom image upload
+
+### 🧩 Board & Assets
+- **Drag & Drop Files**: Add images (PNG/JPG/GIF/WEBP), videos (MP4/WEBM/MOV), and documents (PDF/PPTX/KEY)
+- **Document Viewer**: Inline PDF viewer; helpful prompts for PPT/Keynote with quick download
+- **Notes**: Create editable sticky notes anywhere on the board
+- **Zoom & Pan**: Mouse wheel zoom (0.1×–3×), Ctrl/Cmd shortcuts, and panning for large boards
+
+### 🗣️ Teleprompter
+- **Floating Teleprompter**: Adjustable speed, font size, line-height, opacity, and mirror mode
+- **Popup Mode During Recording**: Optionally auto-open in a separate window while recording
+- **Compact/Minimized Modes**: Keep it unobtrusive while presenting
+
+### 🧰 Utilities
+- **Picture-in-Picture**: Shape-aware PiP with canvas rendering for circular/processed views
+- **Camera Popup**: Separate window with recording indicator and PiP toggle
+- **Localization**: Language switcher (English 🇺🇸 / Portuguese 🇧🇷) persisted in localStorage
 
 ### 🖥️ Professional Interface
-- **Modern UI**: Built with shadcn/ui components
-- **Responsive Design**: Works on all screen sizes
-- **Real-Time Preview**: Live video preview with effects
-- **Control Panel**: Organized settings in right sidebar
-- **Status Indicators**: Visual feedback for recording state
-
-### 🎯 Advanced Features
-- **Virtual Backgrounds**: Space, office, and custom background options
-- **Screen Sharing**: Full desktop or application window capture
-- **Boundary Constraints**: Video stays within canvas bounds
-- **Position Reset**: One-click return to center
-- **Smooth Animations**: CSS transitions for professional feel
+- **Modern UI** built with shadcn/ui and Radix primitives
+- **Responsive Design** with real-time preview and status indicators
+- **Organized Controls** in a docked right sidebar with quick actions
 
 ## 🚀 Getting Started
 
@@ -63,12 +76,13 @@ npm run dev
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 15.3.3 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **UI Components**: shadcn/ui + Radix UI
-- **Icons**: Lucide React
-- **APIs**: MediaRecorder, getUserMedia, getDisplayMedia
+- **Framework**: Next.js 15.3.3 (App Router) + React 19 + TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui (Radix UI)
+- **Media & Capture**: MediaRecorder, getUserMedia, getDisplayMedia, Picture-in-Picture
+- **ML**: TensorFlow.js + BodyPix for human segmentation
+- **Workers**: Web Workers for offloading detection
+- **Transcoding**: ffmpeg.js (WebAssembly) for in-browser conversion
+- **i18n**: Lightweight context-based translations (EN / PT-BR)
 
 ## 📱 Browser Support
 
@@ -81,21 +95,30 @@ npm run dev
 
 ## 🎮 Usage
 
-1. **Allow Camera Access**: Grant permissions when prompted
-2. **Choose Recording Source**: Select Camera, Screen, or Both
-3. **Customize Video**: Adjust size, shape, color, and position
-4. **Start Recording**: Click the red record button
-5. **Drag Video**: Click and drag the video box to reposition
-6. **Stop & Download**: Stop recording and download your video
+1. Allow camera/microphone access
+2. Choose recording source (Camera, Screen, Both)
+3. Customize the presenter: shape, size, color, background mode, filters
+4. Add assets by dragging files onto the board (images/videos/PDF/PPTX/KEY)
+5. Toggle Human Blurring and adjust intensity as needed
+6. Open Teleprompter and tune speed/size; optionally use popup while recording
+7. Start recording; use Picture-in-Picture or Camera Popup if desired
+8. Stop recording to preview; export as WebM/MP4/WebP and download
+
+### ⌨️ Keyboard & Mouse Shortcuts
+- **Toggle Sidebar**: Tab (when not focused on inputs)
+- **Zoom In/Out/Reset**: Ctrl/Cmd + = / - / 0
+- **Zoom via Wheel**: Mouse wheel (Shift/Ctrl on some platforms)
+- **Pan Board**: Hold Ctrl/Cmd and drag when zoomed
 
 ## 🔧 Configuration
 
 The app includes several customizable settings:
 
-- **Video Quality**: Adjustable bitrates for different quality needs
-- **File Formats**: MP4 (H.264) and WebM support
-- **Canvas Size**: Responsive canvas that adapts to content
-- **Color Themes**: Professional color palette options
+- **Video Quality**: Adjustable bitrates for recording
+- **Export Formats**: WebM, MP4, WebP (with in-browser conversion)
+- **Canvas & Board**: Zoomable, pannable board with asset management
+- **Presenter Styles**: Shapes, colors, filters, background modes and virtual backgrounds
+- **Privacy Controls**: Human blurring with intensity and performance monitoring
 
 ## 📄 License
 
